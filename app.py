@@ -8,11 +8,11 @@ from pulp import *
 app = Flask(__name__)
 auth = HTTPBasicAuth()
 
-# idとパスワード
+# ベーシック認証のためのidとパスワード
+# {"ユーザー名": "パスワード"}
 id_list = {"test": "0000"}
 
-#入力されたidに該当するパスワードを
-#比較のために取得する
+#入力されたidに該当するパスワードを比較
 @auth.get_password
 def get_pw(id):
     if id in id_list:
