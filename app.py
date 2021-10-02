@@ -1,4 +1,7 @@
 from flask import Flask, render_template
+import numpy as np, pandas as pd
+from pulp import *
+import ortoolpy
 
 app = Flask(__name__)
 
