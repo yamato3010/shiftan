@@ -8,8 +8,10 @@ from pulp import *
 app = Flask(__name__)
 auth = HTTPBasicAuth()
 
-days = 30 # 提出された表から日数を取得(30は仮) /2忘れない
+days = 10 # 提出された表から日数を取得(10は仮) /2忘れない
 member = 4 # 提出された表から人数取得(4は仮)
+needNumberWeekday = [2, 1] # [前半, 後半]
+needNumberHoliday = [3, 3] # [前半, 後半]
 
 #ペナルティ定数の定義
 C_needNumber = 10
@@ -26,7 +28,7 @@ problem = LpProblem(name="penalty", sense=LpMinimize)
 # 必要な条件
 # ・×が提出されている人をアサインしてはいけない
 # ・○のみでシフトを作る
-# ・平日、前半は1から2人後半は1人
+# ・平日、前半は2人後半は1人
 # 　休日、前半は3人後半3人
 # ・給料の誤差少ないようにする
 
@@ -36,8 +38,16 @@ problem += C_needNumber * lpSum(V_needNumber)
 
 # 制約関数
 for i in range(days*2):
-    problem += V_needNumber >= (lpSum(その日の行のリスト) - 必要人数)
-    problem += V_needNumber >= -(lpSum(その日の行のリスト) - 必要人数)
+    if 平日:
+        problem += V_needNumber >= (lpSum(V_shift[iの行]) - needNumberWeekday[0])
+        problem += V_needNumber >= -(lpSum(V_shift[iの行]) - needNumberWeekday[0])
+        problem += V_needNumber >= (lpSum(V_shift[iの行]) - needNumberWeekday[1])
+        problem += V_needNumber >= -(lpSum(V_shift[iの行]) - needNumberWeekday[1])
+    else:
+        problem += V_needNumber >= (lpSum(V_shift[iの行]) - needNumberHoliday[0])
+        problem += V_needNumber >= -(lpSum(V_shift[iの行]) - needNumberHoliday[0])
+        problem += V_needNumber >= (lpSum(V_shift[iの行]) - needNumberHoliday[1])
+        problem += V_needNumber >= -(lpSum(V_shift[iの行]) - needNumberHoliday[1])
 
 # ベーシック認証のためのidとパスワード
 # {"ユーザー名": "パスワード"}
