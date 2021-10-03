@@ -3,7 +3,7 @@ from ortoolpy import addbinvars
 import pandas as pd
 from flask import Flask, render_template
 from flask_httpauth import HTTPBasicAuth
-from pulp import *
+import pulp
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
@@ -19,11 +19,11 @@ C_noAssign =100
 
 #変数の定義
 V_shift = np.array(addbinvars(days * 2, member))
-V_needNumber = np.array(addbinvars(days)) # 0,1を入れれる日数分のリストを作成、後でこのリストに0，1を記入するコードが必要
+V_needNumber = np.array(addbinvars(days)) # 0,1を入れれる日数分のリストを作成、後でこのリストに0，1を記入するコードが必要、その日条件を満たすかどうかが入る
 # V_noAssign = 
 
 # 問題の定義
-problem = LpProblem(name="penalty", sense=LpMinimize)
+problem = pulp.LpProblem(name="penalty", sense=pulp.LpMinimize)
 
 # 必要な条件
 # ・×が提出されている人をアサインしてはいけない
@@ -33,21 +33,28 @@ problem = LpProblem(name="penalty", sense=LpMinimize)
 # ・給料の誤差少ないようにする
 
 # 目的関数
-problem += C_needNumber * lpSum(V_needNumber)
+problem += C_needNumber * pulp.lpSum(V_needNumber)
 #    + C_noAssign * lpSum(V_noAssign)
 
 # 制約関数
-for i in range(days*2):
-    if 平日:
-        problem += V_needNumber >= (lpSum(V_shift[iの行]) - needNumberWeekday[0])
-        problem += V_needNumber >= -(lpSum(V_shift[iの行]) - needNumberWeekday[0])
-        problem += V_needNumber >= (lpSum(V_shift[iの行]) - needNumberWeekday[1])
-        problem += V_needNumber >= -(lpSum(V_shift[iの行]) - needNumberWeekday[1])
+for i in range(0, days*2, 2):
+    if pd.read_csv('', usecols=['B']) == "平日":  # csvファイルの名前がどうなるかわからないから仮置き
+        problem += V_needNumber >= (pulp.lpSum(V_shift[i]) - needNumberWeekday[0])
+        problem += V_needNumber >= -(pulp.lpSum(V_shift[i]) - needNumberWeekday[0])
+        problem += V_needNumber >= (pulp.lpSum(V_shift[i+1]) - needNumberWeekday[1])
+        problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1]) - needNumberWeekday[1])
     else:
-        problem += V_needNumber >= (lpSum(V_shift[iの行]) - needNumberHoliday[0])
-        problem += V_needNumber >= -(lpSum(V_shift[iの行]) - needNumberHoliday[0])
-        problem += V_needNumber >= (lpSum(V_shift[iの行]) - needNumberHoliday[1])
-        problem += V_needNumber >= -(lpSum(V_shift[iの行]) - needNumberHoliday[1])
+        problem += V_needNumber >= (pulp.lpSum(V_shift[i]) - needNumberHoliday[0])
+        problem += V_needNumber >= -(pulp.lpSum(V_shift[i]) - needNumberHoliday[0])
+        problem += V_needNumber >= (pulp.lpSum(V_shift[i+1]) - needNumberHoliday[1])
+        problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1]) - needNumberHoliday[1])
+
+#解く
+status = problem.solve()
+print(pulp.LpStatus[status])
+
+#結果表示
+print(V_shift)
 
 # ベーシック認証のためのidとパスワード
 # {"ユーザー名": "パスワード"}
