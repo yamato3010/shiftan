@@ -38,7 +38,8 @@ def index():
     if f.filename == "":
         return render_template("index.html",note = 1)
 
-    f.save(f.filename) # ファイルを保存
+    f.save(f.filename) # ファイルを保存(ファイルを選択して「シフト作成」ボタンを押すとstudio codeの左のファイルマネージャにcsvファイルが表示されるはず)
+    
 
 
     # ここにシフトを作成する処理を書く？
@@ -49,14 +50,6 @@ def index():
     # 結果用のhtml
     return render_template("finished.html")
 
-@app.route('/finished', methods=['POST', 'GET'])
-def post():
-    if request.method == "GET":
-        return render_template("index.html",note = 0)
-    # index.htmlの<input type="file" name="csv" class="form-control" id="customFile" accept=".csv">から取得
-    f = request.files['csv']
-    # デバッグ用
-    print(f)
 
     
 
