@@ -60,8 +60,6 @@ def index():
             day_of_week_list[i] = "0"
             day_of_week_list[i + 1] = "0"
         
-    
-    print(day_of_week_list) # デバッグ用
 
     # 作成したリストをdataflameに追加
     chouseisan_csv.insert(loc = 1, column= '曜日' ,value= day_of_week_list)
