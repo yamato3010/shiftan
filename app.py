@@ -40,7 +40,35 @@ def index():
 
     f.save(f.filename) # ファイルを保存(ファイルを選択して「シフト作成」ボタンを押すとstudio codeの左のファイルマネージャにcsvファイルが表示されるはず)
 
-    chouseisan_csv = pd.read_csv(f.filename, encoding='cp932')
+    # csvファイルをデータフレームに
+    chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=1)
+    
+# ここから曜日を1 0 であらわす処理 ↓
+    # csvファイルの日程の列をリスト化
+    day_of_week_list = chouseisan_csv['日程'].tolist()
+
+    # 日程のリストを0 1に変換
+    for i,str in enumerate(day_of_week_list):
+        if "日" in str or "土" in str:
+            day_of_week_list[i] = "1"
+            day_of_week_list[i + 1] = "1"
+        elif "0" == str or "1" == str:
+            continue
+        elif "コメント" in str:
+            continue
+        else:
+            day_of_week_list[i] = "0"
+            day_of_week_list[i + 1] = "0"
+        
+    
+    print(day_of_week_list) # デバッグ用
+
+    # 作成したリストをdataflameに追加
+    chouseisan_csv.insert(loc = 1, column= '曜日' ,value= day_of_week_list)
+
+    print(chouseisan_csv) #デバッグ用
+
+# ここまで曜日を1 0 であらわす処理 ↑    
 
     # ここにシフトを作成する処理を書く？
     
