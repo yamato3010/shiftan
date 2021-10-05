@@ -1,4 +1,4 @@
-from os import remove
+import os
 from flask.wrappers import Request
 import numpy as np
 from ortoolpy import addbinvars
@@ -118,7 +118,7 @@ def index():
     # #結果表示
     # print(V_shift)
 
-    # os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す
+    os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す
 
     # 結果用のhtml
     return render_template("finished.html")
