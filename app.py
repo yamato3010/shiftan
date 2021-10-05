@@ -39,8 +39,8 @@ def index():
         return render_template("index.html",note = 1)
 
     f.save(f.filename) # ファイルを保存(ファイルを選択して「シフト作成」ボタンを押すとstudio codeの左のファイルマネージャにcsvファイルが表示されるはず)
-    
 
+    chouseisan_csv = pd.read_csv(f.filename, encoding='cp932')
 
     # ここにシフトを作成する処理を書く？
     
@@ -97,8 +97,8 @@ def index():
     # 結果用のhtml
     return render_template("finished.html")
 
-
-    
+def get_csv():
+    print("実行不可")
 
 if __name__ == '__main__':
     app.debug = True
