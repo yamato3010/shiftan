@@ -1,7 +1,6 @@
 import os
 import datetime
 import jpholiday
-from flask.wrappers import Request
 import numpy as np
 from ortoolpy import addbinvars
 import pandas as pd
@@ -43,7 +42,9 @@ def index():
     f.save(f.filename) # ファイルを保存(ファイルを選択して「シフト作成」ボタンを押すとstudio codeの左のファイルマネージャにcsvファイルが表示されるはず)
 
     # csvファイルをデータフレームに
-    chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=1)
+    chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=2)
+
+    print(chouseisan_csv)
     
 # ここから曜日を1 0 であらわす処理 ↓
     # csvファイルの日程の列をリスト化
@@ -62,7 +63,6 @@ def index():
             today = datetime.date.today()
             # 調整さんには年は記述されていないので現在の年を追加
             dte = dte.replace(year = today.year)
-            print(dte) # デバッグ用
             
             # もし土日、祝日(jpholidayを使用)だったら
             if dte.weekday() >= 5 or jpholiday.is_holiday(dte):
@@ -93,14 +93,20 @@ def index():
 
     # ここにシフトを作成する処理を書く？
     
-    days = 10 # 提出された表から日数を取得(10は仮) /2忘れない
-    member = 4 # 提出された表から人数取得(4は仮)
+    
+    days = len(chouseisan_csv.axes[0]) - 1 # 提出された表から日数を取得(10は仮) /2忘れない
+    days = days / 2 #floatを整数型にして割り算をしたいがエラー
+    member = len(chouseisan_csv.axes[1]) - 2 # 提出された表から人数取得
+
+    print(days) #デバッグ用
+    print(member) #デバッグ用
+
     needNumberWeekday = [2, 1] # [前半, 後半]
     needNumberHoliday = [3, 3] # [前半, 後半]
 
     #ペナルティ定数の定義
     C_needNumber = 10
-    C_noAssign =100
+    C_noAssign = 100
 
     #変数の定義
     V_shift = np.array(addbinvars(days * 2, member))
