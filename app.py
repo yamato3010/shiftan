@@ -42,8 +42,12 @@ def index():
 
     f.save(f.filename) # ファイルを保存(ファイルを選択して「シフト作成」ボタンを押すとstudio codeの左のファイルマネージャにcsvファイルが表示されるはず)
 
-    # csvファイルをデータフレームに
-    chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=1)
+    try:
+        # csvファイルをデータフレームに
+        chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=1)
+        chouseisan_csv['日程'].tolist()
+    except:
+        chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=2)
     
 # ここから曜日を1 0 であらわす処理 ↓
     # csvファイルの日程の列をリスト化
