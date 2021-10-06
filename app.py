@@ -1,4 +1,6 @@
 import os
+import datetime
+import jpholiday
 from flask.wrappers import Request
 import numpy as np
 from ortoolpy import addbinvars
@@ -46,20 +48,28 @@ def index():
 # ここから曜日を1 0 であらわす処理 ↓
     # csvファイルの日程の列をリスト化
     day_of_week_list = chouseisan_csv['日程'].tolist()
-
+    
     # 日程のリストを0 1に変換
     for i,str in enumerate(day_of_week_list):
-        if "日" in str or "土" in str:
-            day_of_week_list[i] = "1"
-            day_of_week_list[i + 1] = "1"
-        elif "0" == str or "1" == str:
-            continue
-        elif "コメント" in str:
-            continue
-        else:
-            day_of_week_list[i] = "0"
-            day_of_week_list[i + 1] = "0"
+        target = '('
+        idx = str.find(target)
+        r = str[:idx]
         
+
+        try:
+            dte = datetime.datetime.strptime(r, '%m/%d')
+            today = datetime.date.today()
+            dte = dte.replace(year = today.year)
+            print(dte)
+            
+            if dte.weekday() >= 5 or jpholiday.is_holiday(dte):
+                day_of_week_list[i] = "1"
+                day_of_week_list[i + 1] = "1"
+            else:
+                day_of_week_list[i] = "0"
+                day_of_week_list[i + 1] = "0"
+        except:
+            pass
 
     # 作成したリストをdataflameに追加
     chouseisan_csv.insert(loc = 1, column= '曜日' ,value= day_of_week_list)
