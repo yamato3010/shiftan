@@ -1,4 +1,6 @@
-from os import remove
+import os
+import datetime
+import jpholiday
 from flask.wrappers import Request
 import numpy as np
 from ortoolpy import addbinvars
@@ -40,7 +42,54 @@ def index():
 
     f.save(f.filename) # ファイルを保存(ファイルを選択して「シフト作成」ボタンを押すとstudio codeの左のファイルマネージャにcsvファイルが表示されるはず)
 
-    chouseisan_csv = pd.read_csv(f.filename, encoding='cp932')
+    # csvファイルをデータフレームに
+    chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=1)
+    
+# ここから曜日を1 0 であらわす処理 ↓
+    # csvファイルの日程の列をリスト化
+    day_of_week_list = chouseisan_csv['日程'].tolist()
+    
+    # 日程のリストを0 1に変換
+    for i,str in enumerate(day_of_week_list):
+        # 10/1(金) 11:00～17:00という日程の形から日付を摘出
+        target = '('
+        idx = str.find(target)
+        r = str[:idx]
+
+        try:
+            # 摘出した文字列(10/1)をdatetime型に変換
+            dte = datetime.datetime.strptime(r, '%m/%d')
+            today = datetime.date.today()
+            # 調整さんには年は記述されていないので現在の年を追加
+            dte = dte.replace(year = today.year)
+            print(dte) # デバッグ用
+            
+            # もし土日、祝日(jpholidayを使用)だったら
+            if dte.weekday() >= 5 or jpholiday.is_holiday(dte):
+                day_of_week_list[i] = "1"
+            else:
+                day_of_week_list[i] = "0"
+
+        except:
+            """
+            日程が
+            10/1(金) 11:00～17:00
+            17:00～22:00
+            このように（2行）なっている場合、二つ目の行にも同じ値を追加
+            """
+            if day_of_week_list[i - 1] == "1":
+                day_of_week_list[i] = "1"
+            elif day_of_week_list[i - 1] == "0":
+                day_of_week_list[i] = "0"
+            else:
+                pass
+
+    # 作成したリストをdataflameに追加
+    chouseisan_csv.insert(loc = 1, column= '曜日' ,value= day_of_week_list)
+
+    print(chouseisan_csv) #デバッグ用
+
+# ここまで曜日を1 0 であらわす処理 ↑    
 
     # ここにシフトを作成する処理を書く？
     
@@ -92,7 +141,7 @@ def index():
     # #結果表示
     # print(V_shift)
 
-    # os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す
+    os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す
 
     # 結果用のhtml
     return render_template("finished.html")
