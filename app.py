@@ -97,6 +97,10 @@ def index():
     days = (len(chouseisan_csv.axes[0]) - 1) // 2 # 提出された表から日数を取得、各日2列なので2で割る
     member = len(chouseisan_csv.axes[1]) - 2 # 提出された表から人数取得
 
+    #デバッグ用、日付と従業員数を出力
+    print(days)
+    print(member)
+
     needNumberWeekday = [2, 1] # [前半, 後半]
     needNumberHoliday = [3, 3] # [前半, 後半]
 
