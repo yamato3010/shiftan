@@ -94,12 +94,8 @@ def index():
     # ここにシフトを作成する処理を書く？
     
     
-    days = len(chouseisan_csv.axes[0]) - 1 # 提出された表から日数を取得(10は仮) /2忘れない
-    days = days / 2 #floatを整数型にして割り算をしたいがエラー
+    days = (len(chouseisan_csv.axes[0]) - 1) // 2 # 提出された表から日数を取得、各日2列なので2で割る
     member = len(chouseisan_csv.axes[1]) - 2 # 提出された表から人数取得
-
-    print(days) #デバッグ用
-    print(member) #デバッグ用
 
     needNumberWeekday = [2, 1] # [前半, 後半]
     needNumberHoliday = [3, 3] # [前半, 後半]
