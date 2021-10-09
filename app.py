@@ -99,15 +99,14 @@ def index():
 
     #ペナルティ定数の定義
     C_needNumber = 10
-    C_noAssign =100
+    C_noAssign = 100
 
     # 問題の定義
     problem = pulp.LpProblem(name="penalty", sense=pulp.LpMinimize)
 
     #変数の定義
     V_shift = np.array(addbinvars(days*2, member))
-    V_needNumber = np.array(addbinvars(days))
-
+    V_needNumber = np.array(addbinvars(days)) # 0,1でその日の必要人数が足りてるかを表す 0:満たす
     # V_noAssign = 
 
 
@@ -122,20 +121,24 @@ def index():
     problem += C_needNumber * pulp.lpSum(V_needNumber)
     #    + C_noAssign * lpSum(V_noAssign)
 
+    weekday = "0"
+    holiday = "1"
+
     # 制約関数
     for i in range(0, days*2, 2):
         # if chouseisan_csvが×ならそこに0を入れる制約式を作る
-        print(pulp.lpSum(V_shift[i][j] for j in range(member)))
-        if chouseisan_csv.iloc[i,1] == 0:
+        if chouseisan_csv.iloc[i,1] == weekday:
             problem += V_needNumber >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0])
             problem += V_needNumber >= -(pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0])
             problem += V_needNumber >= (pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberWeekday[1])
             problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberWeekday[1])
-        if chouseisan_csv.iloc[i,1] == 1:
+        elif chouseisan_csv.iloc[i,1] == holiday:
             problem += V_needNumber >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberHoliday[0])
             problem += V_needNumber >= -(pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberHoliday[0])
             problem += V_needNumber >= (pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberHoliday[1])
             problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberHoliday[1])
+        else:
+            print("制約関数のforループでのエラー。値: " + chouseisan_csv.iloc[i,1])
 
     #解く
     status = problem.solve()
