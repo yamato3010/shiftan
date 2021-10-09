@@ -41,10 +41,14 @@ def index():
 
     f.save(f.filename) # ファイルを保存(ファイルを選択して「シフト作成」ボタンを押すとstudio codeの左のファイルマネージャにcsvファイルが表示されるはず)
 
-    # csvファイルをデータフレームに
-    chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=2)
 
-    print(chouseisan_csv)
+    try:
+        # csvファイルをデータフレームに
+        chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=1)
+        chouseisan_csv['日程'].tolist()
+    except:
+        chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=2)
+
     
 # ここから曜日を1 0 であらわす処理 ↓
     # csvファイルの日程の列をリスト化
@@ -133,25 +137,25 @@ def index():
     problem += C_needNumber * pulp.lpSum(V_needNumber)
     #    + C_noAssign * lpSum(V_noAssign)
 
-    # 制約関数
-    for i in range(0, days*2, 2):
-        if chouseisan_csv == 0:  # csvファイルの名前がどうなるかわからないから仮置き
-            problem += V_needNumber >= (pulp.lpSum(V_shift[i]) - needNumberWeekday[0])
-            problem += V_needNumber >= -(pulp.lpSum(V_shift[i]) - needNumberWeekday[0])
-            problem += V_needNumber >= (pulp.lpSum(V_shift[i+1]) - needNumberWeekday[1])
-            problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1]) - needNumberWeekday[1])
-        else:
-            problem += V_needNumber >= (pulp.lpSum(V_shift[i]) - needNumberHoliday[0])
-            problem += V_needNumber >= -(pulp.lpSum(V_shift[i]) - needNumberHoliday[0])
-            problem += V_needNumber >= (pulp.lpSum(V_shift[i+1]) - needNumberHoliday[1])
-            problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1]) - needNumberHoliday[1])
+    # # 制約関数
+    # for i in range(0, days*2, 2):
+    #     if pd.read_csv('', usecols=['B']) == "平日":  # csvファイルの名前がどうなるかわからないから仮置き
+    #         problem += V_needNumber >= (pulp.lpSum(V_shift[i]) - needNumberWeekday[0])
+    #         problem += V_needNumber >= -(pulp.lpSum(V_shift[i]) - needNumberWeekday[0])
+    #         problem += V_needNumber >= (pulp.lpSum(V_shift[i+1]) - needNumberWeekday[1])
+    #         problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1]) - needNumberWeekday[1])
+    #     else:
+    #         problem += V_needNumber >= (pulp.lpSum(V_shift[i]) - needNumberHoliday[0])
+    #         problem += V_needNumber >= -(pulp.lpSum(V_shift[i]) - needNumberHoliday[0])
+    #         problem += V_needNumber >= (pulp.lpSum(V_shift[i+1]) - needNumberHoliday[1])
+    #         problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1]) - needNumberHoliday[1])
 
-    #解く
-    status = problem.solve()
-    print(pulp.LpStatus[status])
+    # #解く
+    # status = problem.solve()
+    # print(pulp.LpStatus[status])
 
-    #結果表示
-    print(V_shift)
+    # #結果表示
+    # print(V_shift)
 
     os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す
 
