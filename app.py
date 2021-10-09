@@ -1,7 +1,6 @@
 import os
 import datetime
 import jpholiday
-from flask.wrappers import Request
 import numpy as np
 from ortoolpy import addbinvars
 import pandas as pd
@@ -42,14 +41,10 @@ def index():
 
     f.save(f.filename) # ファイルを保存(ファイルを選択して「シフト作成」ボタンを押すとstudio codeの左のファイルマネージャにcsvファイルが表示されるはず)
 
-    try:
-        # csvファイルをデータフレームに
-        chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=1)
-        chouseisan_csv['日程'].tolist()
-    except:
-        chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=2)
+    # csvファイルをデータフレームに
+    chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=2)
     
-# ここから曜日を1 0 であらわす処理 ↓
+    # ここから曜日を1 0 であらわす処理 ↓
     # csvファイルの日程の列をリスト化
     day_of_week_list = chouseisan_csv['日程'].tolist()
     
@@ -66,7 +61,6 @@ def index():
             today = datetime.date.today()
             # 調整さんには年は記述されていないので現在の年を追加
             dte = dte.replace(year = today.year)
-            print(dte) # デバッグ用
             
             # もし土日、祝日(jpholidayを使用)だったら
             if dte.weekday() >= 5 or jpholiday.is_holiday(dte):
@@ -93,26 +87,43 @@ def index():
 
     print(chouseisan_csv) #デバッグ用
 
-# ここまで曜日を1 0 であらわす処理 ↑    
+
+    # ここまで曜日を1 0 であらわす処理 ↑    
 
     # ここにシフトを作成する処理を書く？
     
-    days = 10 # 提出された表から日数を取得(10は仮) /2忘れない
-    member = 4 # 提出された表から人数取得(4は仮)
+    #daysとmemberの取得
+    days = (len(chouseisan_csv.axes[0]) - 1) // 2 # 提出された表から日数を取得、各日2列なので2で割る
+    member = len(chouseisan_csv.axes[1]) - 2 # 提出された表から人数取得
+
+    #シフト希望の○×を0,1に変換
+    shift_converted = np.ones((days * 2, member)) #シフトの0,1を格納する箱を作成、全て1が格納されている
+    shift_hope = chouseisan_csv.iloc[0:days * 2, 2:] #調整さんのデータフレームから○×だけを取得
+    shift_hope.to_string(header=False, index=False) #ヘッダーとインデックスの削除、○×だけの状態に
+
+    for i in (range(days * 2)): #日程の分ループさせる
+        for j in (range(member)): #従業員の分ループさせる
+            if shift_hope.iat[i, j] != "○": #もしシフト希望表のあるマスが×ならそのマスに0を格納
+                shift_converted[i, j] = 0
+    
+    print(shift_converted) #○×が1,0に書き換えられたシフト希望表の2次元配列を出力
+
     needNumberWeekday = [2, 1] # [前半, 後半]
     needNumberHoliday = [3, 3] # [前半, 後半]
 
     #ペナルティ定数の定義
     C_needNumber = 10
-    C_noAssign =100
-
-    #変数の定義
-    V_shift = np.array(addbinvars(days * 2, member))
-    V_needNumber = np.array(addbinvars(days)) # 0,1を入れれる日数分のリストを作成、後でこのリストに0，1を記入するコードが必要、その日条件を満たすかどうかが入る
-    # V_noAssign = 
+    C_noAssign = 100
 
     # 問題の定義
     problem = pulp.LpProblem(name="penalty", sense=pulp.LpMinimize)
+
+    #変数の定義
+    V_shift = np.array(addbinvars(days*2, member))
+    V_needNumber = np.array(addbinvars(days))
+
+    # V_noAssign = 
+
 
     # 必要な条件
     # ・×が提出されている人をアサインしてはいけない
@@ -125,27 +136,29 @@ def index():
     problem += C_needNumber * pulp.lpSum(V_needNumber)
     #    + C_noAssign * lpSum(V_noAssign)
 
-    # # 制約関数
-    # for i in range(0, days*2, 2):
-    #     if pd.read_csv('', usecols=['B']) == "平日":  # csvファイルの名前がどうなるかわからないから仮置き
-    #         problem += V_needNumber >= (pulp.lpSum(V_shift[i]) - needNumberWeekday[0])
-    #         problem += V_needNumber >= -(pulp.lpSum(V_shift[i]) - needNumberWeekday[0])
-    #         problem += V_needNumber >= (pulp.lpSum(V_shift[i+1]) - needNumberWeekday[1])
-    #         problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1]) - needNumberWeekday[1])
-    #     else:
-    #         problem += V_needNumber >= (pulp.lpSum(V_shift[i]) - needNumberHoliday[0])
-    #         problem += V_needNumber >= -(pulp.lpSum(V_shift[i]) - needNumberHoliday[0])
-    #         problem += V_needNumber >= (pulp.lpSum(V_shift[i+1]) - needNumberHoliday[1])
-    #         problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1]) - needNumberHoliday[1])
+    # 制約関数
+    for i in range(0, days*2, 2):
+        # if chouseisan_csvが×ならそこに0を入れる制約式を作る
+        print(pulp.lpSum(V_shift[i][j] for j in range(member)))
+        if chouseisan_csv.iloc[i,1] == 0:
+            problem += V_needNumber >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0])
+            problem += V_needNumber >= -(pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0])
+            problem += V_needNumber >= (pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberWeekday[1])
+            problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberWeekday[1])
+        if chouseisan_csv.iloc[i,1] == 1:
+            problem += V_needNumber >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberHoliday[0])
+            problem += V_needNumber >= -(pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberHoliday[0])
+            problem += V_needNumber >= (pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberHoliday[1])
+            problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberHoliday[1])
 
-    # #解く
-    # status = problem.solve()
-    # print(pulp.LpStatus[status])
+    #解く
+    status = problem.solve()
+    print(pulp.LpStatus[status])
 
-    # #結果表示
-    # print(V_shift)
+    #結果表示
+    print(V_shift)
 
-    os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す
+    # os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す
 
     # 結果用のhtml
     return render_template("finished.html")
