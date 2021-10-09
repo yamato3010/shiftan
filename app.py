@@ -42,7 +42,7 @@ def index():
     f.save(f.filename) # ファイルを保存(ファイルを選択して「シフト作成」ボタンを押すとstudio codeの左のファイルマネージャにcsvファイルが表示されるはず)
 
     # csvファイルをデータフレームに
-    chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=1)
+    chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=2)
     
     # ここから曜日を1 0 であらわす処理 ↓
     # csvファイルの日程の列をリスト化
@@ -105,8 +105,9 @@ def index():
     problem = pulp.LpProblem(name="penalty", sense=pulp.LpMinimize)
 
     #変数の定義
-    V_shift = pd.DataFrame(addbinvars(days * 2, member))
-    V_needNumber = pd.DataFrame(addbinvars(days)) # 0,1を入れれる日数分のリストを作成、後でこのリストに0，1を記入するコードが必要、その日条件を満たすかどうかが入る
+    V_shift = np.array(addbinvars(days*2, member))
+    V_needNumber = np.array(addbinvars(days))
+
     # V_noAssign = 
 
 
@@ -123,16 +124,18 @@ def index():
 
     # 制約関数
     for i in range(0, days*2, 2):
+        # if chouseisan_csvが×ならそこに0を入れる制約式を作る
+        print(pulp.lpSum(V_shift[i][j] for j in range(member)))
         if chouseisan_csv.iloc[i,1] == 0:
-            problem += V_needNumber >= (pulp.lpSum(V_shift.iloc[i,:]) - needNumberWeekday[0])
-            problem += V_needNumber >= -(pulp.lpSum(V_shift.iloc[i,:]) - needNumberWeekday[0])
-            problem += V_needNumber >= (pulp.lpSum(V_shift.iloc[i+1,:]) - needNumberWeekday[1])
-            problem += V_needNumber >= -(pulp.lpSum(V_shift.iloc[i+1,:]) - needNumberWeekday[1])
-        else:
-            problem += V_needNumber >= (pulp.lpSum(V_shift.iloc[i,:]) - needNumberHoliday[0])
-            problem += V_needNumber >= -(pulp.lpSum(V_shift.iloc[i,:]) - needNumberHoliday[0])
-            problem += V_needNumber >= (pulp.lpSum(V_shift.iloc[i+1,:]) - needNumberHoliday[1])
-            problem += V_needNumber >= -(pulp.lpSum(V_shift.iloc[i+1,:]) - needNumberHoliday[1])
+            problem += V_needNumber >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0])
+            problem += V_needNumber >= -(pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0])
+            problem += V_needNumber >= (pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberWeekday[1])
+            problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberWeekday[1])
+        if chouseisan_csv.iloc[i,1] == 1:
+            problem += V_needNumber >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberHoliday[0])
+            problem += V_needNumber >= -(pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberHoliday[0])
+            problem += V_needNumber >= (pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberHoliday[1])
+            problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberHoliday[1])
 
     #解く
     status = problem.solve()
