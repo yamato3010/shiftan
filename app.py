@@ -43,10 +43,8 @@ def index():
 
     # csvファイルをデータフレームに
     chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=2)
-
-    print(chouseisan_csv)
     
-# ここから曜日を1 0 であらわす処理 ↓
+    # ここから曜日を1 0 であらわす処理 ↓
     # csvファイルの日程の列をリスト化
     day_of_week_list = chouseisan_csv['日程'].tolist()
     
@@ -89,7 +87,10 @@ def index():
 
     print(chouseisan_csv) #デバッグ用
 
-# ここまで曜日を1 0 であらわす処理 ↑    
+
+    # ここまで曜日を1 0 であらわす処理 ↑    
+
+    # ここにシフトを作成する処理を書く？
     
     #daysとmemberの取得
     days = (len(chouseisan_csv.axes[0]) - 1) // 2 # 提出された表から日数を取得、各日2列なので2で割る
@@ -114,13 +115,15 @@ def index():
     C_needNumber = 10
     C_noAssign = 100
 
-    #変数の定義
-    V_shift = np.array(addbinvars(days * 2, member))
-    V_needNumber = np.array(addbinvars(days)) # 0,1を入れれる日数分のリストを作成、後でこのリストに0，1を記入するコードが必要、その日条件を満たすかどうかが入る
-    # V_noAssign = 
-
     # 問題の定義
     problem = pulp.LpProblem(name="penalty", sense=pulp.LpMinimize)
+
+    #変数の定義
+    V_shift = np.array(addbinvars(days*2, member))
+    V_needNumber = np.array(addbinvars(days))
+
+    # V_noAssign = 
+
 
     # 必要な条件
     # ・×が提出されている人をアサインしてはいけない
@@ -133,27 +136,29 @@ def index():
     problem += C_needNumber * pulp.lpSum(V_needNumber)
     #    + C_noAssign * lpSum(V_noAssign)
 
-    # # 制約関数
-    # for i in range(0, days*2, 2):
-    #     if pd.read_csv('', usecols=['B']) == "平日":  # csvファイルの名前がどうなるかわからないから仮置き
-    #         problem += V_needNumber >= (pulp.lpSum(V_shift[i]) - needNumberWeekday[0])
-    #         problem += V_needNumber >= -(pulp.lpSum(V_shift[i]) - needNumberWeekday[0])
-    #         problem += V_needNumber >= (pulp.lpSum(V_shift[i+1]) - needNumberWeekday[1])
-    #         problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1]) - needNumberWeekday[1])
-    #     else:
-    #         problem += V_needNumber >= (pulp.lpSum(V_shift[i]) - needNumberHoliday[0])
-    #         problem += V_needNumber >= -(pulp.lpSum(V_shift[i]) - needNumberHoliday[0])
-    #         problem += V_needNumber >= (pulp.lpSum(V_shift[i+1]) - needNumberHoliday[1])
-    #         problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1]) - needNumberHoliday[1])
+    # 制約関数
+    for i in range(0, days*2, 2):
+        # if chouseisan_csvが×ならそこに0を入れる制約式を作る
+        print(pulp.lpSum(V_shift[i][j] for j in range(member)))
+        if chouseisan_csv.iloc[i,1] == 0:
+            problem += V_needNumber >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0])
+            problem += V_needNumber >= -(pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0])
+            problem += V_needNumber >= (pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberWeekday[1])
+            problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberWeekday[1])
+        if chouseisan_csv.iloc[i,1] == 1:
+            problem += V_needNumber >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberHoliday[0])
+            problem += V_needNumber >= -(pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberHoliday[0])
+            problem += V_needNumber >= (pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberHoliday[1])
+            problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberHoliday[1])
 
-    # #解く
-    # status = problem.solve()
-    # print(pulp.LpStatus[status])
+    #解く
+    status = problem.solve()
+    print(pulp.LpStatus[status])
 
-    # #結果表示
-    # print(V_shift)
+    #結果表示
+    print(V_shift)
 
-    os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す
+    # os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す
 
     # 結果用のhtml
     return render_template("finished.html")
