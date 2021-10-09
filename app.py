@@ -1,6 +1,7 @@
 import os
 import datetime
 import jpholiday
+from jpholiday.jpholiday import holidays
 import numpy as np
 from ortoolpy import addbinvars
 import pandas as pd
@@ -95,7 +96,8 @@ def index():
     #daysとmemberの取得
     days = (len(chouseisan_csv.axes[0]) - 1) // 2 # 提出された表から日数を取得、各日2列なので2で割る
     member = len(chouseisan_csv.axes[1]) - 2 # 提出された表から人数取得
-
+    print(days)
+    print(member)
     #シフト希望の○×を0,1に変換
     shift_converted = np.ones((days * 2, member)) #シフトの0,1を格納する箱を作成、全て1が格納されている
     shift_hope = chouseisan_csv.iloc[0:days * 2, 2:] #調整さんのデータフレームから○×だけを取得
@@ -136,27 +138,30 @@ def index():
     problem += C_needNumber * pulp.lpSum(V_needNumber)
     #    + C_noAssign * lpSum(V_noAssign)
 
+    weekday = "0"
+    holiday = "1"
+
     # 制約関数
     for i in range(0, days*2, 2):
         # if chouseisan_csvが×ならそこに0を入れる制約式を作る
-        print(pulp.lpSum(V_shift[i][j] for j in range(member)))
-        if chouseisan_csv.iloc[i,1] == 0:
-            problem += V_needNumber >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0])
+        if chouseisan_csv.iloc[i,1] == weekday:
+            problem += V_needNumber >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0]) # pulp.lpSum(V_shift[i])の可能性あり
             problem += V_needNumber >= -(pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0])
             problem += V_needNumber >= (pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberWeekday[1])
             problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberWeekday[1])
-        if chouseisan_csv.iloc[i,1] == 1:
+        elif chouseisan_csv.iloc[i,1] == holiday:
             problem += V_needNumber >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberHoliday[0])
             problem += V_needNumber >= -(pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberHoliday[0])
             problem += V_needNumber >= (pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberHoliday[1])
             problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberHoliday[1])
-
+        else:
+            print("実行不可", chouseisan_csv.iloc[i,1])
     #解く
     status = problem.solve()
     print(pulp.LpStatus[status])
 
     #結果表示
-    print(V_shift)
+    print("結果",V_shift)
 
     # os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す
 
