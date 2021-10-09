@@ -42,7 +42,9 @@ def index():
     f.save(f.filename) # ファイルを保存(ファイルを選択して「シフト作成」ボタンを押すとstudio codeの左のファイルマネージャにcsvファイルが表示されるはず)
 
     # csvファイルをデータフレームに
-    chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=1)
+    chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=2)
+
+    print(chouseisan_csv)
     
 # ここから曜日を1 0 であらわす処理 ↓
     # csvファイルの日程の列をリスト化
@@ -61,7 +63,6 @@ def index():
             today = datetime.date.today()
             # 調整さんには年は記述されていないので現在の年を追加
             dte = dte.replace(year = today.year)
-            print(dte) # デバッグ用
             
             # もし土日、祝日(jpholidayを使用)だったら
             if dte.weekday() >= 5 or jpholiday.is_holiday(dte):
@@ -89,17 +90,29 @@ def index():
     print(chouseisan_csv) #デバッグ用
 
 # ここまで曜日を1 0 であらわす処理 ↑    
-
-    # ここにシフトを作成する処理を書く？
     
-    days = 10 # 提出された表から日数を取得(10は仮) /2忘れない
-    member = 4 # 提出された表から人数取得(4は仮)
+    #daysとmemberの取得
+    days = (len(chouseisan_csv.axes[0]) - 1) // 2 # 提出された表から日数を取得、各日2列なので2で割る
+    member = len(chouseisan_csv.axes[1]) - 2 # 提出された表から人数取得
+
+    #シフト希望の○×を0,1に変換
+    shift_converted = np.ones((days * 2, member)) #シフトの0,1を格納する箱を作成、全て1が格納されている
+    shift_hope = chouseisan_csv.iloc[0:days * 2, 2:] #調整さんのデータフレームから○×だけを取得
+    shift_hope.to_string(header=False, index=False) #ヘッダーとインデックスの削除、○×だけの状態に
+
+    for i in (range(days * 2)): #日程の分ループさせる
+        for j in (range(member)): #従業員の分ループさせる
+            if shift_hope.iat[i, j] != "○": #もしシフト希望表のあるマスが×ならそのマスに0を格納
+                shift_converted[i, j] = 0
+    
+    print(shift_converted) #○×が1,0に書き換えられたシフト希望表の2次元配列を出力
+
     needNumberWeekday = [2, 1] # [前半, 後半]
     needNumberHoliday = [3, 3] # [前半, 後半]
 
     #ペナルティ定数の定義
     C_needNumber = 10
-    C_noAssign =100
+    C_noAssign = 100
 
     #変数の定義
     V_shift = np.array(addbinvars(days * 2, member))
