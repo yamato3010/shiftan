@@ -61,7 +61,6 @@ def index():
             today = datetime.date.today()
             # 調整さんには年は記述されていないので現在の年を追加
             dte = dte.replace(year = today.year)
-            print(dte) # デバッグ用
             
             # もし土日、祝日(jpholidayを使用)だったら
             if dte.weekday() >= 5 or jpholiday.is_holiday(dte):
@@ -88,12 +87,27 @@ def index():
 
     print(chouseisan_csv) #デバッグ用
 
+
     # ここまで曜日を1 0 であらわす処理 ↑    
 
     # ここにシフトを作成する処理を書く？
     
-    days = 10 # 提出された表から日数を取得(10は仮) /2忘れない
-    member = 4 # 提出された表から人数取得(4は仮)
+    #daysとmemberの取得
+    days = (len(chouseisan_csv.axes[0]) - 1) // 2 # 提出された表から日数を取得、各日2列なので2で割る
+    member = len(chouseisan_csv.axes[1]) - 2 # 提出された表から人数取得
+
+    #シフト希望の○×を0,1に変換
+    shift_converted = np.ones((days * 2, member)) #シフトの0,1を格納する箱を作成、全て1が格納されている
+    shift_hope = chouseisan_csv.iloc[0:days * 2, 2:] #調整さんのデータフレームから○×だけを取得
+    shift_hope.to_string(header=False, index=False) #ヘッダーとインデックスの削除、○×だけの状態に
+
+    for i in (range(days * 2)): #日程の分ループさせる
+        for j in (range(member)): #従業員の分ループさせる
+            if shift_hope.iat[i, j] != "○": #もしシフト希望表のあるマスが×ならそのマスに0を格納
+                shift_converted[i, j] = 0
+    
+    print(shift_converted) #○×が1,0に書き換えられたシフト希望表の2次元配列を出力
+
     needNumberWeekday = [2, 1] # [前半, 後半]
     needNumberHoliday = [3, 3] # [前半, 後半]
 
@@ -106,7 +120,8 @@ def index():
 
     #変数の定義
     V_shift = np.array(addbinvars(days*2, member))
-    V_needNumber = np.array(addbinvars(days)) # 0,1でその日の必要人数が足りてるかを表す 0:満たす
+    V_needNumber = np.array(addbinvars(days))
+
     # V_noAssign = 
 
 
@@ -121,24 +136,20 @@ def index():
     problem += C_needNumber * pulp.lpSum(V_needNumber)
     #    + C_noAssign * lpSum(V_noAssign)
 
-    weekday = "0"
-    holiday = "1"
-
     # 制約関数
     for i in range(0, days*2, 2):
         # if chouseisan_csvが×ならそこに0を入れる制約式を作る
-        if chouseisan_csv.iloc[i,1] == weekday:
+        print(pulp.lpSum(V_shift[i][j] for j in range(member)))
+        if chouseisan_csv.iloc[i,1] == 0:
             problem += V_needNumber >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0])
             problem += V_needNumber >= -(pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0])
             problem += V_needNumber >= (pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberWeekday[1])
             problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberWeekday[1])
-        elif chouseisan_csv.iloc[i,1] == holiday:
+        if chouseisan_csv.iloc[i,1] == 1:
             problem += V_needNumber >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberHoliday[0])
             problem += V_needNumber >= -(pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberHoliday[0])
             problem += V_needNumber >= (pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberHoliday[1])
             problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberHoliday[1])
-        else:
-            print("制約関数のforループでのエラー。値: " + chouseisan_csv.iloc[i,1])
 
     #解く
     status = problem.solve()
