@@ -177,7 +177,7 @@ def index():
     # 結果表示
     print("制約関数",pulp.value(problem.objective))
 
-    # os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す
+    os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す
 
     # 結果用のhtml
     return render_template("finished.html")
