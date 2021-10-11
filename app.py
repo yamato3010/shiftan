@@ -143,33 +143,31 @@ def index():
 
     # 制約関数
     for i in range(0, days*2, 2):
-        # if chouseisan_csvが×ならそこに0を入れる制約式を作る
         if chouseisan_csv.iloc[i,1] == weekday:
-            problem += V_needNumber >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0]) # pulp.lpSum(V_shift[i])の可能性あり
-            problem += V_needNumber >= -(pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0])
-            problem += V_needNumber >= (pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberWeekday[1])
-            problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberWeekday[1])
+            problem += V_needNumber[i//2] >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0]) # pulp.lpSum(V_shift[i])の可能性あり
+            problem += V_needNumber[i//2] >= -(pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0])
+            problem += V_needNumber[i//2] >= (pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberWeekday[1])
+            problem += V_needNumber[i//2] >= -(pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberWeekday[1])
         elif chouseisan_csv.iloc[i,1] == holiday:
-            problem += V_needNumber >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberHoliday[0])
-            problem += V_needNumber >= -(pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberHoliday[0])
-            problem += V_needNumber >= (pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberHoliday[1])
-            problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberHoliday[1])
+            problem += V_needNumber[i//2] >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberHoliday[0])
+            problem += V_needNumber[i//2] >= -(pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberHoliday[0])
+            problem += V_needNumber[i//2] >= (pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberHoliday[1])
+            problem += V_needNumber[i//2] >= -(pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberHoliday[1])
         else:
             print("実行不可", chouseisan_csv.iloc[i,1])
+
     #解く
     status = problem.solve()
     print(pulp.LpStatus[status])
 
     #結果表示
     print("結果",V_shift)
+    print(V_needNumber)
 
     # os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す
 
     # 結果用のhtml
     return render_template("finished.html")
-
-def get_csv():
-    print("実行不可")
 
 if __name__ == '__main__':
     app.debug = True
