@@ -1,7 +1,6 @@
 import os
 import datetime
 import jpholiday
-from jpholiday.jpholiday import holidays
 import numpy as np
 from ortoolpy import addbinvars
 import pandas as pd
@@ -89,7 +88,7 @@ def index():
             elif day_of_week_list[i - 1] == "0":
                 day_of_week_list[i] = "0"
             else:
-                pass
+                continue
 
     # 作成したリストをdataflameに追加
     chouseisan_csv.insert(loc = 1, column= '曜日' ,value= day_of_week_list)
@@ -123,7 +122,6 @@ def index():
 
     #ペナルティ定数の定義
     C_needNumber = 10
-    C_noAssign = 100
 
     # 問題の定義
     problem = pulp.LpProblem(name="penalty", sense=pulp.LpMinimize)
@@ -133,9 +131,6 @@ def index():
     
     V_needNumber = np.array(addbinvars(days))
     
-
-    # V_noAssign = 
-
 
     # 必要な条件
     # ・×が提出されている人をアサインしてはいけない
@@ -150,11 +145,27 @@ def index():
 
     weekday = "0"
     holiday = "1"
+    
+    no_shift_hope = 0.0
+    yes_shift_hope = 1.0
+
     # 制約関数
-    for i in range(0, days*2, 2):
+    # シフト希望が×ならシフトに入れない
+    for i in range(days * 2):
+        for j in range(member):
+            if shift_converted[i][j] == no_shift_hope:
+                problem += V_shift[i][j] == 0
+            elif shift_converted[i][j] == yes_shift_hope:
+                continue
+            else:
+                print("155行目:×の人にはアサインしないようにするループでエラー発生")
+                break
+
+    # 人数が合うようにする制約式
+    for i in range(0, days * 2, 2):
         # if chouseisan_csvが×ならそこに0を入れる制約式を作る
         if chouseisan_csv.iloc[i,1] == weekday:
-            problem += V_needNumber[i//2] >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0]) # pulp.lpSum(V_shift[i])の可能性あり
+            problem += V_needNumber[i//2] >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0])
             problem += V_needNumber[i//2] >= -(pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0])
             problem += V_needNumber[i//2] >= (pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberWeekday[1])
             problem += V_needNumber[i//2] >= -(pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberWeekday[1])
@@ -178,6 +189,14 @@ def index():
     # 結果表示
     print("制約関数",pulp.value(problem.objective))
 
+    # デバッグ用
+    for i in range(days * 2):
+        for j in range(member):
+            if shift_converted[i][j] == no_shift_hope:
+                if result[i][j] != 0:
+                    print((i,j) , "シフト希望不可の部分にアサインしてしまっています")
+            else:
+                continue
 
     os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す
 
