@@ -41,7 +41,6 @@ def index():
 
     f.save(f.filename) # ファイルを保存(ファイルを選択して「シフト作成」ボタンを押すとstudio codeの左のファイルマネージャにcsvファイルが表示されるはず)
 
-    # csvファイルをデータフレームに
     try:
         # csvファイルをデータフレームに
         chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=1)
@@ -53,6 +52,7 @@ def index():
         print("headerは２です")
 
     # ここから曜日を1 0 であらわす処理 ↓
+
     # csvファイルの日程の列をリスト化
     day_of_week_list = chouseisan_csv['日程'].tolist()
     
@@ -95,7 +95,6 @@ def index():
 
     print(chouseisan_csv) #デバッグ用
 
-
     # ここまで曜日を1 0 であらわす処理 ↑    
 
     # ここにシフトを作成する処理を書く？
@@ -130,7 +129,6 @@ def index():
     V_shift = np.array(addbinvars(days*2, member))
     
     V_needNumber = np.array(addbinvars(days))
-    
 
     # 必要な条件
     # ・×が提出されている人をアサインしてはいけない
@@ -200,9 +198,12 @@ def index():
 
     os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す
 
+
     # 結果用のhtml
     return render_template("finished.html")
 
 if __name__ == '__main__':
     app.debug = True
+    
     app.run()
+
