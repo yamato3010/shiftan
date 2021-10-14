@@ -122,7 +122,7 @@ def index():
 
     #ペナルティ定数の定義
     C_needNumber = 10
-    C_continuousWork = 100
+
     # 問題の定義
     problem = pulp.LpProblem(name="penalty", sense=pulp.LpMinimize)
 
@@ -131,9 +131,6 @@ def index():
     
     V_needNumber = np.array(addbinvars(days))
     
-    V_dayShift = np.array(addbinvars(days, member))
-
-    V_continuousWork = np.array(addbinvars(member))
 
     # 必要な条件
     # ・×が提出されている人をアサインしてはいけない
@@ -141,13 +138,10 @@ def index():
     # ・平日、前半は2人後半は1人
     # 　休日、前半は3人後半3人
     # ・給料の誤差少ないようにする
-    # ・5連勤まで
 
     # 目的関数
-    problem += C_needNumber * pulp.lpSum(V_needNumber) + C_continuousWork * V_continuousWork
-
-    maxContinuousWork = 5
-    week = 7
+    problem += C_needNumber * pulp.lpSum(V_needNumber)
+    #    + C_noAssign * lpSum(V_noAssign)
 
     weekday = "0"
     holiday = "1"
@@ -155,7 +149,7 @@ def index():
     no_shift_hope = 0.0
     yes_shift_hope = 1.0
 
-    # 制約条件
+    # 制約関数
     # シフト希望が×ならシフトに入れない
     for i in range(days * 2):
         for j in range(member):
@@ -164,26 +158,12 @@ def index():
             elif shift_converted[i][j] == yes_shift_hope:
                 continue
             else:
-                print("シフト希望:×の人にはアサインしないようにするループでエラー発生")
+                print("155行目:×の人にはアサインしないようにするループでエラー発生")
                 break
-    
-    # 5連勤をなくす
-    # まず、V_dayShiftを作る
-    for i in range(0, days * 2, 2):
-        for j in range(member):
-            if pulp.value(V_shift[i][j]) == 1 or pulp.value(V_shift[i][j]) == 1: # pulp.valueでは中を見ることができない
-                problem += V_dayShift[i//2][j] == 1
-            elif pulp.value(V_shift[i][j]) == 0 and pulp.value(V_shift[i][j]) == 0:
-                problem += V_dayShift[i//2][j] == 0
-            else:
-                print("error")
-
-    for k in range(member):
-        for i in range(0, days - 6):
-            problem += V_continuousWork[k] >= (pulp.lpSum(V_dayShift[i+j][k] for j in range(week)) - maxContinuousWork)
 
     # 人数が合うようにする制約式
     for i in range(0, days * 2, 2):
+        # if chouseisan_csvが×ならそこに0を入れる制約式を作る
         if chouseisan_csv.iloc[i,1] == weekday:
             problem += V_needNumber[i//2] >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0])
             problem += V_needNumber[i//2] >= -(pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0])
@@ -195,7 +175,7 @@ def index():
             problem += V_needNumber[i//2] >= (pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberHoliday[1])
             problem += V_needNumber[i//2] >= -(pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberHoliday[1])
         else:
-            print("人数調整:実行不可", chouseisan_csv.iloc[i,1])
+            print("実行不可", chouseisan_csv.iloc[i,1])
 
     #解く
     status = problem.solve()
@@ -205,10 +185,6 @@ def index():
     result = np.vectorize(pulp.value)(V_shift).astype(int)
     print(type(result))
     print("result: ",result) # これが作成されたシフト？
-
-    debug = np.vectorize(pulp.value)(V_dayShift).astype(int)
-    print(type(debug))
-    print("V_dayShift: ",debug)
 
     # 結果表示
     print("制約関数",pulp.value(problem.objective))
