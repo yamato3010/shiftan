@@ -6,7 +6,7 @@ import jpholiday
 import numpy as np
 from ortoolpy import addbinvars
 import pandas as pd
-from flask import Flask, render_template,after_this_request
+from flask import Flask, render_template
 from flask import request, send_file
 from flask_httpauth import HTTPBasicAuth
 import pulp
