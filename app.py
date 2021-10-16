@@ -16,6 +16,7 @@ auth = HTTPBasicAuth()
 # ベーシック認証のためのidとパスワード
 # {"ユーザー名": "パスワード"}
 id_list = {"test": "0000"}
+header = 1
 
 # 入力されたidに該当するパスワードを比較
 @auth.get_password
@@ -46,9 +47,11 @@ def index():
         chouseisan_csv = pd.read_csv(f.filename, encoding='cp932', header=1)
         chouseisan_csv['日程'].tolist()
         chouseisan_csv = chouseisan_csv.iloc[: , :-1]
+        header = 1
         print("headerは１です")
     except:
         chouseisan_csv = pd.read_csv(f.filename, encoding='cp932', header=2)
+        header = 2
         print("headerは２です")
 
     # ここから曜日を1 0 であらわす処理 ↓
@@ -69,6 +72,8 @@ def index():
             today = datetime.date.today()
             # 調整さんには年は記述されていないので現在の年を追加
             dte = dte.replace(year = today.year)
+
+            
             
             # もし土日、祝日(jpholidayを使用)だったら
             if dte.weekday() >= 5 or jpholiday.is_holiday(dte):
@@ -192,21 +197,33 @@ def index():
 
     # 作成されたシフトをエクセルで出力する
     # もう一度csvを読み込んでその中の○×を書き換える
-    new_chouseisan_csv = pd.read_csv(f.filename, encoding='cp932', header=None) # csv読み込み
+    if header == 1:
+        new_chouseisan_csv = pd.read_csv(f.filename, encoding='cp932', header=1)
+        new_chouseisan_csv = new_chouseisan_csv.iloc[: , :-1]
+    else:
+        new_chouseisan_csv = pd.read_csv(f.filename, encoding='cp932', header=2)
+
+     # csv読み込み
     new_chouseisan_csv = new_chouseisan_csv.fillna("") # 欠損値(Nan)を消す
-    title = new_chouseisan_csv.iat[0, 0] # ファイルの名前にする部分を取得
+    # title = new_chouseisan_csv.iat[0, 0] # ファイルの名前にする部分を取得 
+    # ↑ここを取得するのはまだ
+    print("newchouseisan",new_chouseisan_csv)
+
 
     for i in (range(days * 2)): # 日程の分ループさせる
         for j in (range(member)): # 従業員の分ループさせる
             if result[i, j] == 1: # もしシフトのあるマスが1ならそのマスに○を格納
-                new_chouseisan_csv.iat[i + 3, j + 1] = "○"
+
+                new_chouseisan_csv.iat[i, j + 1] = "○"
             elif result[i, j] == 0: # もしシフトのあるマスが0ならそのマスに×を格納
-                new_chouseisan_csv.iat[i + 3, j + 1] = "×"
+                new_chouseisan_csv.iat[i, j + 1] = "×"
             else: # 0 or 1 以外がある場合エラー表示
-                new_chouseisan_csv.iat[i + 3, j + 1] = "error"
+                new_chouseisan_csv.iat[i, j + 1] = "error"
     
+
     print(new_chouseisan_csv) # エクセルファイルの中身
-    new_chouseisan_csv.to_excel(title + '.xlsx', encoding='cp932', index=False, header=False) #インデックス、ヘッダーなしでエクセル出力
+    new_chouseisan_csv.to_excel("test" + '.xlsx', encoding='cp932', index=False, header=True) #インデックス、ヘッダーなしでエクセル出力
+
 
     os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す    
 
