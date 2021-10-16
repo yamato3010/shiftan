@@ -38,12 +38,16 @@ def get_pw(id):
 def index():
 
     # ここから初期化処理 残ったxlsxファイルとcssファイルを消している
+    print("------初期化処理開始------")
     deleteFileXlsx = glob.glob('./*.xlsx')
     deleteFileCss = glob.glob('./*.csv')
     for filename in deleteFileXlsx:
         os.remove(filename)
+        print(filename,"を削除しました。")
     for filename in deleteFileCss:
         os.remove(filename)
+        print(filename,"を削除しました。")
+    print("------初期化処理終了------")
     # ここまで初期化処理
 
     if request.method == "GET":
