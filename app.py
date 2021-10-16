@@ -39,7 +39,7 @@ def index():
 
     # ここから初期化処理 残ったxlsxファイルとcssファイルを消している
     deleteFileXlsx = glob.glob('./*.xlsx')
-    deleteFileCss = glob.glob('./*.css')
+    deleteFileCss = glob.glob('./*.csv')
     for filename in deleteFileXlsx:
         os.remove(filename)
     for filename in deleteFileCss:
