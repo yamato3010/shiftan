@@ -191,17 +191,19 @@ def index():
     print(type(result))
     print("result: ",result) # 作成されたシフト
 
-    # 結果表示
-    print("制約関数",pulp.value(problem.objective))
 
     # デバッグ用
     for i in range(days * 2):
         for j in range(member):
             if shift_converted[i][j] == no_shift_hope:
                 if result[i][j] != 0:
-                    print((i,j) , "シフト希望不可の部分にアサインしてしまっています")
+                    print((i,j) , "シフト希望不可の部分にアサインしてしまっているので０に変えます。")
+                    result[i][j] == 0
             else:
                 continue
+
+    # 結果表示
+    print("制約関数",pulp.value(problem.objective))
 
     # 作成されたシフトをエクセルで出力する
     # もう一度csvを読み込んでその中の○×を書き換える
