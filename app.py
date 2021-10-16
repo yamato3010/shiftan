@@ -16,8 +16,9 @@ auth = HTTPBasicAuth()
 # ベーシック認証のためのidとパスワード
 # {"ユーザー名": "パスワード"}
 id_list = {"test": "0000"}
+header = 1
 
-#入力されたidに該当するパスワードを比較
+# 入力されたidに該当するパスワードを比較
 @auth.get_password
 def get_pw(id):
     if id in id_list:
@@ -25,7 +26,7 @@ def get_pw(id):
     return None
 
 @app.route('/', methods=['POST', 'GET'])
-@auth.login_required #ここで認証が行われる
+@auth.login_required # ここで認証が行われる
 def index():
     if request.method == "GET":
         print("GETでした！")# デバッグ用
@@ -43,15 +44,22 @@ def index():
 
     try:
         # csvファイルをデータフレームに
-        chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=1)
+        chouseisan_csv = pd.read_csv(f.filename, encoding='cp932', header=1)
         chouseisan_csv['日程'].tolist()
+        chouseisan_csv = chouseisan_csv.iloc[: , :-1]
+        header = 1
+        print("headerは１です")
     except:
-        chouseisan_csv = pd.read_csv(f.filename, encoding='cp932' ,header=2)
-        
+        chouseisan_csv = pd.read_csv(f.filename, encoding='cp932', header=2)
+        header = 2
+        print("headerは２です")
+
+    # ここから曜日を1 0 であらわす処理 ↓
+
     # csvファイルの日程の列をリスト化
     day_of_week_list = chouseisan_csv['日程'].tolist()
     
-    # 日程のリストを0 1に変換
+    # 日程のリストを0, 1に変換
     for i,str in enumerate(day_of_week_list):
         # 10/1(金) 11:00～17:00という日程の形から日付を摘出
         target = '('
@@ -64,6 +72,8 @@ def index():
             today = datetime.date.today()
             # 調整さんには年は記述されていないので現在の年を追加
             dte = dte.replace(year = today.year)
+
+            
             
             # もし土日、祝日(jpholidayを使用)だったら
             if dte.weekday() >= 5 or jpholiday.is_holiday(dte):
@@ -83,48 +93,41 @@ def index():
             elif day_of_week_list[i - 1] == "0":
                 day_of_week_list[i] = "0"
             else:
-                pass
+                continue
 
     # 作成したリストをdataflameに追加
     chouseisan_csv.insert(loc = 1, column= '曜日' ,value= day_of_week_list)
-
     print(chouseisan_csv) #デバッグ用
-
-    # ここまで曜日を1 0 であらわす処理 ↑    
-
-    # ここにシフトを作成する処理を書く？
     
-    #daysとmemberの取得
+    # daysとmemberの取得
     days = (len(chouseisan_csv.axes[0]) - 1) // 2 # 提出された表から日数を取得、各日2列なので2で割る
     member = len(chouseisan_csv.axes[1]) - 2 # 提出された表から人数取得
 
-    #シフト希望の○×を0,1に変換
-    shift_converted = np.ones((days * 2, member)) #シフトの0,1を格納する箱を作成、全て1が格納されている
-    shift_hope = chouseisan_csv.iloc[0:days * 2, 2:] #調整さんのデータフレームから○×だけを取得
-    shift_hope.to_string(header=False, index=False) #ヘッダーとインデックスの削除、○×だけの状態に
+    # シフト希望の○×を0,1に変換
+    shift_converted = np.ones((days * 2, member)) # シフトの0,1を格納する箱を作成、全て1が格納されている
+    shift_hope = chouseisan_csv.iloc[0:days * 2, 2:] # 調整さんのデータフレームから○×だけを取得
+    shift_hope.to_string(header=False, index=False) # ヘッダーとインデックスの削除、○×だけの状態に
 
-    for i in (range(days * 2)): #日程の分ループさせる
-        for j in (range(member)): #従業員の分ループさせる
-            if shift_hope.iat[i, j] != "○": #もしシフト希望表のあるマスが×ならそのマスに0を格納
+    for i in (range(days * 2)): # 日程の分ループさせる
+        for j in (range(member)): # 従業員の分ループさせる
+            if shift_hope.iat[i, j] != "○": # もしシフト希望表のあるマスが×ならそのマスに0を格納
                 shift_converted[i, j] = 0
     
-    print(shift_converted) #○×が1,0に書き換えられたシフト希望表の2次元配列を出力
+    print(shift_converted) # ○×が1,0に書き換えられたシフト希望表の2次元配列を出力
 
     needNumberWeekday = [2, 1] # [前半, 後半]
     needNumberHoliday = [3, 3] # [前半, 後半]
 
-    #ペナルティ定数の定義
+    # ペナルティ定数の定義
     C_needNumber = 10
-    C_noAssign = 100
 
     # 問題の定義
     problem = pulp.LpProblem(name="penalty", sense=pulp.LpMinimize)
 
-    #変数の定義
+    # 変数の定義
     V_shift = np.array(addbinvars(days*2, member))
+    
     V_needNumber = np.array(addbinvars(days))
-
-    # V_noAssign = 
 
     # 必要な条件
     # ・×が提出されている人をアサインしてはいけない
@@ -137,27 +140,89 @@ def index():
     problem += C_needNumber * pulp.lpSum(V_needNumber)
     #    + C_noAssign * lpSum(V_noAssign)
 
-    # # 制約関数
-    # for i in range(0, days*2, 2):
-    #     if pd.read_csv('', usecols=['B']) == "平日":  # csvファイルの名前がどうなるかわからないから仮置き
-    #         problem += V_needNumber >= (pulp.lpSum(V_shift[i]) - needNumberWeekday[0])
-    #         problem += V_needNumber >= -(pulp.lpSum(V_shift[i]) - needNumberWeekday[0])
-    #         problem += V_needNumber >= (pulp.lpSum(V_shift[i+1]) - needNumberWeekday[1])
-    #         problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1]) - needNumberWeekday[1])
-    #     else:
-    #         problem += V_needNumber >= (pulp.lpSum(V_shift[i]) - needNumberHoliday[0])
-    #         problem += V_needNumber >= -(pulp.lpSum(V_shift[i]) - needNumberHoliday[0])
-    #         problem += V_needNumber >= (pulp.lpSum(V_shift[i+1]) - needNumberHoliday[1])
-    #         problem += V_needNumber >= -(pulp.lpSum(V_shift[i+1]) - needNumberHoliday[1])
+    weekday = "0"
+    holiday = "1"
+    
+    no_shift_hope = 0.0
+    yes_shift_hope = 1.0
 
-    # #解く
-    # status = problem.solve()
-    # print(pulp.LpStatus[status])
+    # 制約関数
+    # シフト希望が×ならシフトに入れない
+    for i in range(days * 2):
+        for j in range(member):
+            if shift_converted[i][j] == no_shift_hope:
+                problem += V_shift[i][j] == 0
+            elif shift_converted[i][j] == yes_shift_hope:
+                continue
+            else:
+                print("155行目:×の人にはアサインしないようにするループでエラー発生")
+                break
 
-    # #結果表示
-    # print(V_shift)
+    # 人数が合うようにする制約式
+    for i in range(0, days * 2, 2):
+        # if chouseisan_csvが×ならそこに0を入れる制約式を作る
+        if chouseisan_csv.iloc[i,1] == weekday:
+            problem += V_needNumber[i//2] >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0])
+            problem += V_needNumber[i//2] >= -(pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberWeekday[0])
+            problem += V_needNumber[i//2] >= (pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberWeekday[1])
+            problem += V_needNumber[i//2] >= -(pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberWeekday[1])
+        elif chouseisan_csv.iloc[i,1] == holiday:
+            problem += V_needNumber[i//2] >= (pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberHoliday[0])
+            problem += V_needNumber[i//2] >= -(pulp.lpSum(V_shift[i][j] for j in range(member)) - needNumberHoliday[0])
+            problem += V_needNumber[i//2] >= (pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberHoliday[1])
+            problem += V_needNumber[i//2] >= -(pulp.lpSum(V_shift[i+1][j] for j in range(member)) - needNumberHoliday[1])
+        else:
+            print("実行不可", chouseisan_csv.iloc[i,1])
 
-    os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す
+    # 解く
+    status = problem.solve()
+    print(pulp.LpStatus[status])
+
+
+    result = np.vectorize(pulp.value)(V_shift).astype(int)
+    print(type(result))
+    print("result: ",result) # 作成されたシフト
+
+    # 結果表示
+    print("制約関数",pulp.value(problem.objective))
+
+    # デバッグ用
+    for i in range(days * 2):
+        for j in range(member):
+            if shift_converted[i][j] == no_shift_hope:
+                if result[i][j] != 0:
+                    print((i,j) , "シフト希望不可の部分にアサインしてしまっています")
+            else:
+                continue
+
+    # 作成されたシフトをエクセルで出力する
+    # もう一度csvを読み込んでその中の○×を書き換える
+    if header == 1:
+        new_chouseisan_csv = pd.read_csv(f.filename, encoding='cp932', header=1)
+        new_chouseisan_csv = new_chouseisan_csv.iloc[: , :-1]
+    else:
+        new_chouseisan_csv = pd.read_csv(f.filename, encoding='cp932', header=2)
+
+     # csv読み込み
+    new_chouseisan_csv = new_chouseisan_csv.fillna("") # 欠損値(Nan)を消す
+    # title = new_chouseisan_csv.iat[0, 0] # ファイルの名前にする部分を取得 
+    # ↑ここを取得するのはまだ
+    print("newchouseisan",new_chouseisan_csv)
+
+    for i in (range(days * 2)): # 日程の分ループさせる
+        for j in (range(member)): # 従業員の分ループさせる
+            if result[i, j] == 1: # もしシフトのあるマスが1ならそのマスに○を格納
+                new_chouseisan_csv.iat[i, j + 1] = "○"
+            elif result[i, j] == 0: # もしシフトのあるマスが0ならそのマスに×を格納
+                new_chouseisan_csv.iat[i, j + 1] = "×"
+            else: # 0 or 1 以外がある場合エラー表示
+                new_chouseisan_csv.iat[i, j + 1] = "error"
+    
+
+    print(new_chouseisan_csv) # エクセルファイルの中身
+    new_chouseisan_csv.to_excel("test" + '.xlsx', encoding='cp932', index=False, header=True) #インデックス、ヘッダーなしでエクセル出力
+
+    os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す    
 
 
     # 結果用のhtml
@@ -165,5 +230,6 @@ def index():
 
 if __name__ == '__main__':
     app.debug = True
-
+    
     app.run()
+
