@@ -1,13 +1,16 @@
 import os
+import glob
 import datetime
+from flask.scaffold import _matching_loader_thinks_module_is_package
 import jpholiday
 import numpy as np
 from ortoolpy import addbinvars
 import pandas as pd
 from flask import Flask, render_template
-from flask import request
+from flask import request, send_file
 from flask_httpauth import HTTPBasicAuth
 import pulp
+from werkzeug.wrappers import response
 
 
 app = Flask(__name__)
@@ -20,6 +23,9 @@ id_list = {"test": "0000"}
 # headerが1の場合と2の場合を表す変数
 header = 1
 
+# ダウンロードするファイルが入る変数
+downloadFile = None
+
 # 入力されたidに該当するパスワードを比較
 @auth.get_password
 def get_pw(id):
@@ -30,11 +36,25 @@ def get_pw(id):
 @app.route('/', methods=['POST', 'GET'])
 @auth.login_required # ここで認証が行われる
 def index():
+
+    # ここから初期化処理 残ったxlsxファイルとcssファイルを消している
+    print("------初期化処理開始------")
+    deleteFileXlsx = glob.glob('./*.xlsx')
+    deleteFileCss = glob.glob('./*.csv')
+    for filename in deleteFileXlsx:
+        os.remove(filename)
+        print(filename,"を削除しました。")
+    for filename in deleteFileCss:
+        os.remove(filename)
+        print(filename,"を削除しました。")
+    print("------初期化処理終了------")
+    # ここまで初期化処理
+
     if request.method == "GET":
-        print("GETでした！")# デバッグ用
+        print("index.html: GETでした！")# デバッグ用
         return render_template("index.html",note = 0)
 
-    print("POSTでした！")# デバッグ用
+    print("index.html: POSTでした！")# デバッグ用
     # index.htmlの<input type="file" name="csv" class="form-control" id="customFile" accept=".csv">から取得
     f = request.files['csv']
 
@@ -50,11 +70,11 @@ def index():
         chouseisan_csv['日程'].tolist()
         chouseisan_csv = chouseisan_csv.iloc[: , :-1]
         header = 1
-        print("headerは１です")
+        print("header1で読み込みます")
     except:
         chouseisan_csv = pd.read_csv(f.filename, encoding='cp932', header=2)
         header = 2
-        print("headerは２です")
+        print("header2で読み込みます")
 
     # ここから曜日を1 0 であらわす処理 ↓
 
@@ -62,7 +82,6 @@ def index():
     with open(f.filename) as file:
         title = file.readlines()[0]
         title = title.replace( '\n' , '' )
-        print(title)
 
     # csvファイルの日程の列をリスト化
     day_of_week_list = chouseisan_csv['日程'].tolist()
@@ -105,7 +124,7 @@ def index():
 
     # 作成したリストをdataflameに追加
     chouseisan_csv.insert(loc = 1, column= '曜日' ,value= day_of_week_list)
-    print(chouseisan_csv) #デバッグ用
+    print("曜日を追加したcsvファイル(chouseisan_csv): ",chouseisan_csv) #デバッグ用
     
     # daysとmemberの取得
     days = (len(chouseisan_csv.axes[0]) - 1) // 2 # 提出された表から日数を取得、各日2列なので2で割る
@@ -121,7 +140,7 @@ def index():
             if shift_hope.iat[i, j] != "○": # もしシフト希望表のあるマスが×ならそのマスに0を格納
                 shift_converted[i, j] = 0
     
-    print(shift_converted) # ○×が1,0に書き換えられたシフト希望表の2次元配列を出力
+    print("○×を1,0に置き換えたもの(shift_converted): ",shift_converted) # ○×が1,0に書き換えられたシフト希望表の2次元配列を出力
 
     needNumberWeekday = [2, 1] # [前半, 後半]
     needNumberHoliday = [3, 3] # [前半, 後半]
@@ -183,13 +202,13 @@ def index():
             print("実行不可", chouseisan_csv.iloc[i,1])
 
     # 解く
+    print("------計算します------")
     status = problem.solve()
-    print(pulp.LpStatus[status])
+    print("pulpステータス: ",pulp.LpStatus[status])
 
 
     result = np.vectorize(pulp.value)(V_shift).astype(int)
-    print(type(result))
-    print("result: ",result) # 作成されたシフト
+    print("作成されたシフト(result): ",result) # 作成されたシフト
 
     # 結果表示
     print("制約関数",pulp.value(problem.objective))
@@ -216,7 +235,7 @@ def index():
     # title = new_chouseisan_csv.iat[0, 0] # ファイルの名前にする部分を取得 
     # ↑ここを取得するのはまだ
 
-
+    # エクセルファイルに変換する処理
     for i in (range(days * 2)): # 日程の分ループさせる
         for j in (range(member)): # 従業員の分ループさせる
             if result[i, j] == 1: # もしシフトのあるマスが1ならそのマスに○を格納
@@ -228,16 +247,26 @@ def index():
                 new_chouseisan_csv.iat[i, j + 1] = "error"
     
 
-    print(new_chouseisan_csv) # エクセルファイルの中身
-    print(title)
+    print("エクセルファイルの中身: ",new_chouseisan_csv) # エクセルファイルの中身
     new_chouseisan_csv.to_excel(title + '.xlsx', encoding='cp932', index=False, header=True) #インデックス、ヘッダーなしでエクセル出力
 
+    # この二つの変数がグローバル変数であることの定義
+    global downloadFile
 
+    downloadFile = title + '.xlsx'
     os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す    
-
-
     # 結果用のhtml
-    return render_template("finished.html")
+    return render_template("finished.html", file = title + '.xlsx')
+
+@app.route('/download', methods=['POST', 'GET'])
+def download():
+
+    print("ダウンロードされたファイル: ",downloadFile)
+
+    return send_file(downloadFile, as_attachment=True,
+                     attachment_filename=downloadFile,
+                     mimetype='text/plain')
+
 
 if __name__ == '__main__':
     app.debug = True
