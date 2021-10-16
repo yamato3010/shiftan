@@ -58,6 +58,11 @@ def index():
 
     # ここから曜日を1 0 であらわす処理 ↓
 
+    # タイトルを取得
+    with open(f.filename) as file:
+        title = file.readlines()[0]
+        print(title)
+
     # csvファイルの日程の列をリスト化
     day_of_week_list = chouseisan_csv['日程'].tolist()
     
@@ -224,7 +229,7 @@ def index():
     
 
     print(new_chouseisan_csv) # エクセルファイルの中身
-    new_chouseisan_csv.to_excel("test" + '.xlsx', encoding='cp932', index=False, header=True) #インデックス、ヘッダーなしでエクセル出力
+    new_chouseisan_csv.to_excel(title + '.xlsx', encoding='cp932', index=False, header=True) #インデックス、ヘッダーなしでエクセル出力
 
 
     os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す    
