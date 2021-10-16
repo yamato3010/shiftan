@@ -209,9 +209,11 @@ def index():
     # ↑ここを取得するのはまだ
     print("newchouseisan",new_chouseisan_csv)
 
+
     for i in (range(days * 2)): # 日程の分ループさせる
         for j in (range(member)): # 従業員の分ループさせる
             if result[i, j] == 1: # もしシフトのあるマスが1ならそのマスに○を格納
+
                 new_chouseisan_csv.iat[i, j + 1] = "○"
             elif result[i, j] == 0: # もしシフトのあるマスが0ならそのマスに×を格納
                 new_chouseisan_csv.iat[i, j + 1] = "×"
@@ -221,6 +223,7 @@ def index():
 
     print(new_chouseisan_csv) # エクセルファイルの中身
     new_chouseisan_csv.to_excel("test" + '.xlsx', encoding='cp932', index=False, header=True) #インデックス、ヘッダーなしでエクセル出力
+
 
     os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す    
 
