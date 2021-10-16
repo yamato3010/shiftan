@@ -53,6 +53,11 @@ def index():
 
     # ここから曜日を1 0 であらわす処理 ↓
 
+    # タイトルを取得
+    with open(f.filename) as file:
+        title = file.readlines()[0]
+        print(title)
+
     # csvファイルの日程の列をリスト化
     day_of_week_list = chouseisan_csv['日程'].tolist()
     
@@ -189,24 +194,7 @@ def index():
                     print((i,j) , "シフト希望不可の部分にアサインしてしまっています")
             else:
                 continue
-
-    # 作成されたシフトをエクセルで出力する
-    # もう一度csvを読み込んでその中の○×を書き換える
-    new_chouseisan_csv = pd.read_csv(f.filename, encoding='cp932', header=None) # csv読み込み
-    new_chouseisan_csv = new_chouseisan_csv.fillna("") # 欠損値(Nan)を消す
-    title = new_chouseisan_csv.iat[0, 0] # ファイルの名前にする部分を取得
-
-    for i in (range(days * 2)): # 日程の分ループさせる
-        for j in (range(member)): # 従業員の分ループさせる
-            if result[i, j] == 1: # もしシフトのあるマスが1ならそのマスに○を格納
-                new_chouseisan_csv.iat[i + 3, j + 1] = "○"
-            elif result[i, j] == 0: # もしシフトのあるマスが0ならそのマスに×を格納
-                new_chouseisan_csv.iat[i + 3, j + 1] = "×"
-            else: # 0 or 1 以外がある場合エラー表示
-                new_chouseisan_csv.iat[i + 3, j + 1] = "error"
     
-    print(new_chouseisan_csv) # エクセルファイルの中身
-    new_chouseisan_csv.to_excel(title + '.xlsx', encoding='cp932', index=False, header=False) #インデックス、ヘッダーなしでエクセル出力
 
     os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す    
 
