@@ -202,12 +202,12 @@ def index():
             print("実行不可", chouseisan_csv.iloc[i,1])
 
     # 解く
+    print("------計算します------")
     status = problem.solve()
-    print(pulp.LpStatus[status])
+    print("pulpステータス: ",pulp.LpStatus[status])
 
 
     result = np.vectorize(pulp.value)(V_shift).astype(int)
-    print(type(result))
     print("作成されたシフト(result): ",result) # 作成されたシフト
 
     # 結果表示
@@ -247,8 +247,7 @@ def index():
                 new_chouseisan_csv.iat[i, j + 1] = "error"
     
 
-    print(new_chouseisan_csv) # エクセルファイルの中身
-    print(title)
+    print("エクセルファイルの中身: ",new_chouseisan_csv) # エクセルファイルの中身
     new_chouseisan_csv.to_excel(title + '.xlsx', encoding='cp932', index=False, header=True) #インデックス、ヘッダーなしでエクセル出力
 
     # この二つの変数がグローバル変数であることの定義
