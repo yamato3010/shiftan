@@ -61,6 +61,7 @@ def index():
     # タイトルを取得
     with open(f.filename) as file:
         title = file.readlines()[0]
+        title = title.replace( '\n' , '' )
         print(title)
 
     # csvファイルの日程の列をリスト化
@@ -214,7 +215,6 @@ def index():
     new_chouseisan_csv = new_chouseisan_csv.fillna("") # 欠損値(Nan)を消す
     # title = new_chouseisan_csv.iat[0, 0] # ファイルの名前にする部分を取得 
     # ↑ここを取得するのはまだ
-    print("newchouseisan",new_chouseisan_csv)
 
 
     for i in (range(days * 2)): # 日程の分ループさせる
@@ -229,6 +229,7 @@ def index():
     
 
     print(new_chouseisan_csv) # エクセルファイルの中身
+    print(title)
     new_chouseisan_csv.to_excel(title + '.xlsx', encoding='cp932', index=False, header=True) #インデックス、ヘッダーなしでエクセル出力
 
 
