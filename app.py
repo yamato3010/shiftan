@@ -6,6 +6,7 @@ import jpholiday
 import numpy as np
 from ortoolpy import addbinvars
 import pandas as pd
+import openpyxl
 from flask import Flask, render_template
 from flask import request, send_file
 from flask_httpauth import HTTPBasicAuth
@@ -24,7 +25,7 @@ id_list = {"test": "0000"}
 header = 1
 
 # ダウンロードするファイルが入る変数
-downloadFile = None
+excelFile = None
 
 # 入力されたidに該当するパスワードを比較
 @auth.get_password
@@ -251,20 +252,24 @@ def index():
     new_chouseisan_csv.to_excel(title + '.xlsx', encoding='cp932', index=False, header=True) #インデックス、ヘッダーなしでエクセル出力
 
     # この二つの変数がグローバル変数であることの定義
-    global downloadFile
+    global excelFile
 
-    downloadFile = title + '.xlsx'
-    os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す    
+    excelFile = title + '.xlsx'
+    os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す   
+
+    # ここからエクセルファイル編集 希望しているところに色付け
+    
+
     # 結果用のhtml
     return render_template("finished.html", file = title + '.xlsx')
 
 @app.route('/download', methods=['POST', 'GET'])
 def download():
 
-    print("ダウンロードされたファイル: ",downloadFile)
+    print("ダウンロードされたファイル: ",excelFile)
 
-    return send_file(downloadFile, as_attachment=True,
-                     attachment_filename=downloadFile,
+    return send_file(excelFile, as_attachment=True,
+                     attachment_filename=excelFile,
                      mimetype='text/plain')
 
 
