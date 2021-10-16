@@ -1,13 +1,16 @@
 import os
+import glob
 import datetime
+from flask.scaffold import _matching_loader_thinks_module_is_package
 import jpholiday
 import numpy as np
 from ortoolpy import addbinvars
 import pandas as pd
-from flask import Flask, render_template
-from flask import request
+from flask import Flask, render_template,after_this_request
+from flask import request, send_file
 from flask_httpauth import HTTPBasicAuth
 import pulp
+from werkzeug.wrappers import response
 
 
 app = Flask(__name__)
@@ -20,6 +23,9 @@ id_list = {"test": "0000"}
 # headerが1の場合と2の場合を表す変数
 header = 1
 
+# ダウンロードするファイルが入る変数
+downloadFile = None
+
 # 入力されたidに該当するパスワードを比較
 @auth.get_password
 def get_pw(id):
@@ -30,6 +36,16 @@ def get_pw(id):
 @app.route('/', methods=['POST', 'GET'])
 @auth.login_required # ここで認証が行われる
 def index():
+
+    # ここから初期化処理 残ったxlsxファイルとcssファイルを消している
+    deleteFileXlsx = glob.glob('./*.xlsx')
+    deleteFileCss = glob.glob('./*.css')
+    for filename in deleteFileXlsx:
+        os.remove(filename)
+    for filename in deleteFileCss:
+        os.remove(filename)
+    # ここまで初期化処理
+
     if request.method == "GET":
         print("GETでした！")# デバッグ用
         return render_template("index.html",note = 0)
@@ -232,15 +248,25 @@ def index():
     print(title)
     new_chouseisan_csv.to_excel(title + '.xlsx', encoding='cp932', index=False, header=True) #インデックス、ヘッダーなしでエクセル出力
 
+    # この二つの変数がグローバル変数であることの定義
+    global downloadFile
 
+    downloadFile = title + '.xlsx'
     os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す    
-
-
     # 結果用のhtml
-    return render_template("finished.html")
+    return render_template("finished.html", file = title + '.xlsx')
+
+@app.route('/download', methods=['POST', 'GET'])
+def download():
+
+    print("ダウンロードされたファイル: ",downloadFile)
+
+    return send_file(downloadFile, as_attachment=True,
+                     attachment_filename=downloadFile,
+                     mimetype='text/plain')
+
 
 if __name__ == '__main__':
     app.debug = True
-    
     app.run()
 
