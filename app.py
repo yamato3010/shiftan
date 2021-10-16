@@ -51,10 +51,10 @@ def index():
     # ここまで初期化処理
 
     if request.method == "GET":
-        print("GETでした！")# デバッグ用
+        print("index.html: GETでした！")# デバッグ用
         return render_template("index.html",note = 0)
 
-    print("POSTでした！")# デバッグ用
+    print("index.html: POSTでした！")# デバッグ用
     # index.htmlの<input type="file" name="csv" class="form-control" id="customFile" accept=".csv">から取得
     f = request.files['csv']
 
@@ -70,11 +70,11 @@ def index():
         chouseisan_csv['日程'].tolist()
         chouseisan_csv = chouseisan_csv.iloc[: , :-1]
         header = 1
-        print("headerは１です")
+        print("header1で読み込みます")
     except:
         chouseisan_csv = pd.read_csv(f.filename, encoding='cp932', header=2)
         header = 2
-        print("headerは２です")
+        print("header2で読み込みます")
 
     # ここから曜日を1 0 であらわす処理 ↓
 
@@ -82,7 +82,6 @@ def index():
     with open(f.filename) as file:
         title = file.readlines()[0]
         title = title.replace( '\n' , '' )
-        print(title)
 
     # csvファイルの日程の列をリスト化
     day_of_week_list = chouseisan_csv['日程'].tolist()
@@ -125,7 +124,7 @@ def index():
 
     # 作成したリストをdataflameに追加
     chouseisan_csv.insert(loc = 1, column= '曜日' ,value= day_of_week_list)
-    print(chouseisan_csv) #デバッグ用
+    print("曜日を追加したcsvファイル(chouseisan_csv): ",chouseisan_csv) #デバッグ用
     
     # daysとmemberの取得
     days = (len(chouseisan_csv.axes[0]) - 1) // 2 # 提出された表から日数を取得、各日2列なので2で割る
@@ -141,7 +140,7 @@ def index():
             if shift_hope.iat[i, j] != "○": # もしシフト希望表のあるマスが×ならそのマスに0を格納
                 shift_converted[i, j] = 0
     
-    print(shift_converted) # ○×が1,0に書き換えられたシフト希望表の2次元配列を出力
+    print("○×を1,0に置き換えたもの(shift_converted): ",shift_converted) # ○×が1,0に書き換えられたシフト希望表の2次元配列を出力
 
     needNumberWeekday = [2, 1] # [前半, 後半]
     needNumberHoliday = [3, 3] # [前半, 後半]
@@ -209,7 +208,7 @@ def index():
 
     result = np.vectorize(pulp.value)(V_shift).astype(int)
     print(type(result))
-    print("result: ",result) # 作成されたシフト
+    print("作成されたシフト(result): ",result) # 作成されたシフト
 
     # 結果表示
     print("制約関数",pulp.value(problem.objective))
@@ -236,7 +235,7 @@ def index():
     # title = new_chouseisan_csv.iat[0, 0] # ファイルの名前にする部分を取得 
     # ↑ここを取得するのはまだ
 
-
+    # エクセルファイルに変換する処理
     for i in (range(days * 2)): # 日程の分ループさせる
         for j in (range(member)): # 従業員の分ループさせる
             if result[i, j] == 1: # もしシフトのあるマスが1ならそのマスに○を格納
