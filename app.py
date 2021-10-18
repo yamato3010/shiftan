@@ -215,11 +215,14 @@ def index():
     for i in range(days * 2):
         for j in range(member):
             if shift_converted[i][j] == no_shift_hope:
-                if result[i][j] != 0:
+                if result[i, j] != 0:
                     print((i,j) , "シフト希望不可の部分にアサインしてしまっているので０に変えます。")
-                    result[i][j] == 0
+                    result[i, j] = 0
+                    print(result[i, j])
             else:
                 continue
+    
+    print("直されたシフト(result): ",result) # 直されたシフト
 
     # 結果表示
     print("制約関数",pulp.value(problem.objective))
