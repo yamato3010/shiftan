@@ -6,6 +6,8 @@ import jpholiday
 import numpy as np
 from ortoolpy import addbinvars
 import pandas as pd
+import openpyxl
+from openpyxl.styles import PatternFill
 from flask import Flask, render_template
 from flask import request, send_file
 from flask_httpauth import HTTPBasicAuth
@@ -24,7 +26,7 @@ id_list = {"test": "0000"}
 header = 1
 
 # ダウンロードするファイルが入る変数
-downloadFile = None
+excelFile = None
 
 # 入力されたidに該当するパスワードを比較
 @auth.get_password
@@ -140,6 +142,9 @@ def index():
             if shift_hope.iat[i, j] != "○": # もしシフト希望表のあるマスが×ならそのマスに0を格納
                 shift_converted[i, j] = 0
     
+
+
+
     print("○×を1,0に置き換えたもの(shift_converted): ",shift_converted) # ○×が1,0に書き換えられたシフト希望表の2次元配列を出力
 
     needNumberWeekday = [2, 1] # [前半, 後半]
@@ -251,20 +256,44 @@ def index():
     new_chouseisan_csv.to_excel(title + '.xlsx', encoding='cp932', index=False, header=True) #インデックス、ヘッダーなしでエクセル出力
 
     # この二つの変数がグローバル変数であることの定義
-    global downloadFile
+    global excelFile
 
-    downloadFile = title + '.xlsx'
-    os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す    
+    excelFile = title + '.xlsx'
+    os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す   
+
+    # ここからエクセルファイル編集 希望しているところに色付け
+    
+    wb = openpyxl.load_workbook(filename=excelFile)
+    sheet = wb['Sheet1']
+
+    print(type(shift_hope))
+    print(shift_hope)
+
+    for i in(range(days * 2)):
+        for j in (range(member)):
+            if shift_hope.iat[i,j] == "○":
+                # シフト希望を出しているところに色付け
+                sheet.cell(row=i+2, column=j+2).fill = PatternFill(patternType='solid', fgColor='00bfff', bgColor= '00bfff')
+            elif shift_hope.iat[i,j] == "×":
+                continue
+            else:
+                sheet.cell(row=i+2, column=j+2).fill = PatternFill(patternType='solid', fgColor='7cfc00', bgColor= '7cfc00')
+    
+    # 変更したエクセルファイルを変更
+    wb.save(excelFile)
+    # ここまで
+
+
     # 結果用のhtml
     return render_template("finished.html", file = title + '.xlsx')
 
 @app.route('/download', methods=['POST', 'GET'])
 def download():
 
-    print("ダウンロードされたファイル: ",downloadFile)
+    print("ダウンロードされたファイル: ",excelFile)
 
-    return send_file(downloadFile, as_attachment=True,
-                     attachment_filename=downloadFile,
+    return send_file(excelFile, as_attachment=True,
+                     attachment_filename=excelFile,
                      mimetype='text/plain')
 
 
