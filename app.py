@@ -291,7 +291,7 @@ def index():
     # countifで○の数を数える
     sheet["A" + str(days*2+3)].value = "予想給料"
     for i in range(1,member+1):
-        countif_circle = "=COUNTIF(" + chr(i+65) + "2:" + chr(i+65) + str(days*2+1) + ',"○")*1000'
+        countif_circle = "=COUNTIF(" + chr(i+65) + "2:" + chr(i+65) + str(days*2+1) + ',"○")*5000'
         sheet.cell(row=days*2+3, column=i+1).value = countif_circle
 
 
