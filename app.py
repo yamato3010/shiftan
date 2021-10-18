@@ -11,6 +11,7 @@ from flask import request, send_file
 from flask_httpauth import HTTPBasicAuth
 import pulp
 from werkzeug.wrappers import response
+import openpyxl as px
 
 
 app = Flask(__name__)
@@ -87,11 +88,11 @@ def index():
     day_of_week_list = chouseisan_csv['日程'].tolist()
     
     # 日程のリストを0, 1に変換
-    for i,str in enumerate(day_of_week_list):
+    for i,string in enumerate(day_of_week_list):
         # 10/1(金) 11:00～17:00という日程の形から日付を摘出
         target = '('
-        idx = str.find(target)
-        r = str[:idx]
+        idx = string.find(target)
+        r = string[:idx]
 
         try:
             # 摘出した文字列(10/1)をdatetime型に変換
@@ -259,7 +260,18 @@ def index():
     global downloadFile
 
     downloadFile = title + '.xlsx'
-    os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す    
+    os.remove(f.filename) # 処理が終わった後、ダウンロードしたcsvを消す
+
+    wb = px.load_workbook(filename=downloadFile)
+    sheet = wb['Sheet1']
+
+    # countifで○の数を数える
+    for i in range(member):
+        countif_circle = "=COUNTIF(" + chr(i+66) + "2:" + chr(i+66) + str(days*2+1) + ',"○")*1000)'
+        sheet[chr(i+66) + str(days*2+3)].value = countif_circle
+
+    wb.save(downloadFile)
+    
     # 結果用のhtml
     return render_template("finished.html", file = title + '.xlsx')
 
