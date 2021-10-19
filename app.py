@@ -13,7 +13,9 @@ from flask import request, send_file
 from flask_httpauth import HTTPBasicAuth
 import pulp
 from werkzeug.wrappers import response
-
+import openpyxl as px
+from openpyxl.worksheet.datavalidation import DataValidation
+from openpyxl.styles.borders import Border, Side
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
@@ -89,11 +91,11 @@ def index():
     day_of_week_list = chouseisan_csv['日程'].tolist()
     
     # 日程のリストを0, 1に変換
-    for i,str in enumerate(day_of_week_list):
+    for i,string in enumerate(day_of_week_list):
         # 10/1(金) 11:00～17:00という日程の形から日付を摘出
         target = '('
-        idx = str.find(target)
-        r = str[:idx]
+        idx = string.find(target)
+        r = string[:idx]
 
         try:
             # 摘出した文字列(10/1)をdatetime型に変換
@@ -215,17 +217,22 @@ def index():
     result = np.vectorize(pulp.value)(V_shift).astype(int)
     print("作成されたシフト(result): ",result) # 作成されたシフト
 
-    # 結果表示
-    print("制約関数",pulp.value(problem.objective))
 
     # デバッグ用
     for i in range(days * 2):
         for j in range(member):
             if shift_converted[i][j] == no_shift_hope:
-                if result[i][j] != 0:
-                    print((i,j) , "シフト希望不可の部分にアサインしてしまっています")
+                if result[i, j] != 0:
+                    print((i,j) , "シフト希望不可の部分にアサインしてしまっているので０に変えます。")
+                    result[i, j] = 0
+                    print(result[i, j])
             else:
                 continue
+    
+    print("直されたシフト(result): ",result) # 直されたシフト
+
+    # 結果表示
+    print("制約関数",pulp.value(problem.objective))
 
     # 作成されたシフトをエクセルで出力する
     # もう一度csvを読み込んでその中の○×を書き換える
@@ -273,17 +280,63 @@ def index():
         for j in (range(member)):
             if shift_hope.iat[i,j] == "○":
                 # シフト希望を出しているところに色付け
-                sheet.cell(row=i+2, column=j+2).fill = PatternFill(patternType='solid', fgColor='00bfff', bgColor= '00bfff')
+                sheet.cell(row=i+2, column=j+2).fill = PatternFill(patternType='solid', fgColor='fecf8d', bgColor= 'fecf8d') # オレンジ
             elif shift_hope.iat[i,j] == "×":
                 continue
             else:
-                sheet.cell(row=i+2, column=j+2).fill = PatternFill(patternType='solid', fgColor='7cfc00', bgColor= '7cfc00')
+                sheet.cell(row=i+2, column=j+2).fill = PatternFill(patternType='solid', fgColor='fffac2', bgColor= 'fffac2') # 黄色
     
+    # 表のmemberと日程を見えやすいように色付け
+    for i in range(1, days*2+4):
+        sheet.cell(row=i, column=1).fill = PatternFill(patternType='solid', fgColor='eaf6fd', bgColor= 'eaf6fd') # 水色
+
+    for i in range(1, member+2):
+        sheet.cell(row=1, column=i).fill = PatternFill(patternType='solid', fgColor='eaf6fd', bgColor= 'eaf6fd') # 水色
+    
+    # A列の幅を広くする
+    sheet.column_dimensions['A'].width = 23
+
+    # ズーム倍率を140%に変更
+    sheet.sheet_view.zoomScale = 140
+
+    # countifで○の数を数える
+    sheet["A" + str(days*2+3)].value = "予想給料"
+    
+    for i in range(1,member+1):
+        countif_circle = "=COUNTIF(" + chr(i+65) + "2:" + chr(i+65) + str(days*2+1) + ',"○")*5000 &"円"'
+        sheet.cell(row=days*2+3, column=i+1).value = countif_circle
+
+    # ○,×,△のプルダウンを作成
+    dv = DataValidation(type="list", formula1='"○,×,△"')
+
+    # 適用するセルの指定
+    for i in range(1, days*2+1):
+        for j in range(1, member+1):
+            dv.add(sheet.cell(i+1, j+1))
+    
+    # シートに入力規則を登録
+    sheet.add_data_validation(dv)
+
+    # 罫線(外枠)を設定
+    thin_bottom_border = Border(bottom=Side(style='thin', color='000000'))
+    medium_bottom_border = Border(bottom=Side(style='medium', color='000000'))
+
+    # セルに罫線を設定
+    # 1行目の下側に中線
+    for i in range(1, member+2):
+        sheet.cell(row=1, column=i).border = medium_bottom_border
+    
+    # 日程ごとに下側に細線
+    for i in range(3, days*2+3, 2):
+        for j in range(1, member+2):
+            sheet.cell(row=i, column=j).border = thin_bottom_border
+    
+    # 1行目を画面に固定
+    sheet.freeze_panes = 'A2'
+
     # 変更したエクセルファイルを変更
     wb.save(excelFile)
-    # ここまで
-
-
+    
     # 結果用のhtml
     return render_template("finished.html", file = title + '.xlsx')
 
