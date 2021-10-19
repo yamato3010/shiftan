@@ -330,6 +330,9 @@ def index():
     for i in range(3, days*2+3, 2):
         for j in range(1, member+2):
             sheet.cell(row=i, column=j).border = thin_bottom_border
+    
+    # 1行目を画面に固定
+    sheet.freeze_panes = 'A2'
 
     # 変更したエクセルファイルを変更
     wb.save(excelFile)
