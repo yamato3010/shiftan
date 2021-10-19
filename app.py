@@ -15,6 +15,7 @@ import pulp
 from werkzeug.wrappers import response
 import openpyxl as px
 from openpyxl.worksheet.datavalidation import DataValidation
+from openpyxl.styles.borders import Border, Side
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
@@ -316,6 +317,19 @@ def index():
     # シートに入力規則を登録
     sheet.add_data_validation(dv)
 
+    # 罫線(外枠)を設定
+    thin_bottom_border = Border(bottom=Side(style='thin', color='000000'))
+    medium_bottom_border = Border(bottom=Side(style='medium', color='000000'))
+
+    # セルに罫線を設定
+    # 1行目の下側に中線
+    for i in range(1, member+2):
+        sheet.cell(row=1, column=i).border = medium_bottom_border
+    
+    # 日程ごとに下側に細線
+    for i in range(3, days*2+3, 2):
+        for j in range(1, member+2):
+            sheet.cell(row=i, column=j).border = thin_bottom_border
 
     # 変更したエクセルファイルを変更
     wb.save(excelFile)
