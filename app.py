@@ -316,7 +316,7 @@ def index():
     sheet["A" + str(days*2+3)].value = "予想給料"
     
     for i in range(1,member+1):
-        countif_circle = "=COUNTIF(" + chr(i+65) + "2:" + chr(i+65) + str(days*2+1) + ',"○")*5000 &"円"'
+        countif_circle = "=COUNTIF(" + chr(i+66) + "2:" + chr(i+66) + str(days*2+1) + ',"○")*5000 &"円"'
         sheet.cell(row=days*2+3, column=i+2).value = countif_circle
 
     # ○,×,△のプルダウンを作成
