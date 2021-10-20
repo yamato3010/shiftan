@@ -13,7 +13,6 @@ from flask import request, send_file
 from flask_httpauth import HTTPBasicAuth
 import pulp
 from werkzeug.wrappers import response
-import openpyxl as px
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.styles.borders import Border, Side
 
@@ -149,8 +148,8 @@ def index():
 
     print("○×を1,0に置き換えたもの(shift_converted): ",shift_converted) # ○×が1,0に書き換えられたシフト希望表の2次元配列を出力
 
-    needNumberWeekday = [2, 1] # [前半, 後半]
-    needNumberHoliday = [3, 3] # [前半, 後半]
+    needNumberWeekday = [3, 2] # [前半, 後半]
+    needNumberHoliday = [4, 4] # [前半, 後半]
 
     # ペナルティ定数の定義
     C_needNumber = 10
@@ -316,7 +315,7 @@ def index():
     sheet["A" + str(days*2+3)].value = "予想給料"
     
     for i in range(1,member+1):
-        countif_circle = "=COUNTIF(" + chr(i+65) + "2:" + chr(i+65) + str(days*2+1) + ',"○")*5000 &"円"'
+        countif_circle = "=COUNTIF(" + chr(i+66) + "2:" + chr(i+66) + str(days*2+1) + ',"○")*5000 &"円"'
         sheet.cell(row=days*2+3, column=i+2).value = countif_circle
 
     # ○,×,△のプルダウンを作成
