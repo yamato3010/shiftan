@@ -284,6 +284,11 @@ def index():
     sheet.insert_cols(2)
     sheet["B1"].value = "人数"
 
+    # B列に=countif関数を挿入
+    for i in range(2, days*2+2):
+        countif_people_number = "=COUNTIF(C" + str(i) + ":" + chr(member+66) + str(i) + ',"○")'
+        sheet.cell(row=i, column=2).value = countif_people_number
+
     for i in(range(days * 2)):
         for j in (range(member)):
             if shift_hope.iat[i,j] == "○":
