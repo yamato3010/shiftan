@@ -255,9 +255,13 @@ def index():
                 new_chouseisan_csv.iat[i, j + 1] = "○"
             elif result[i, j] == 0: # もしシフトのあるマスが0ならそのマスに×を格納
                 new_chouseisan_csv.iat[i, j + 1] = "×"
-            else: # 0 or 1 以外がある場合エラー表示
-                new_chouseisan_csv.iat[i, j + 1] = "error"
-    
+            else: # 0 or 1 以外がある場合,シフト希望を見て○×を選択
+                if shift_converted[i, j] == no_shift_hope:
+                    new_chouseisan_csv.iat[i, j + 1] = "×"
+                elif shift_converted[i, j] == yes_shift_hope:
+                    new_chouseisan_csv.iat[i, j + 1] = "○"
+                else:
+                    new_chouseisan_csv.iat[i, j + 1] = "error"
 
     print("エクセルファイルの中身: ",new_chouseisan_csv) # エクセルファイルの中身
     new_chouseisan_csv.to_excel(title + '.xlsx', encoding='cp932', index=False, header=True) #インデックス、ヘッダーなしでエクセル出力
