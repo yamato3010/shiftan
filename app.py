@@ -280,15 +280,24 @@ def index():
     print(type(shift_hope))
     print(shift_hope)
 
+    # B列に人数列を挿入する
+    sheet.insert_cols(2)
+    sheet["B1"].value = "人数"
+
+    # B列に=countif関数を挿入
+    for i in range(2, days*2+2):
+        countif_people_number = "=COUNTIF(C" + str(i) + ":" + chr(member+66) + str(i) + ',"○")'
+        sheet.cell(row=i, column=2).value = countif_people_number
+
     for i in(range(days * 2)):
         for j in (range(member)):
             if shift_hope.iat[i,j] == "○":
                 # シフト希望を出しているところに色付け
-                sheet.cell(row=i+2, column=j+2).fill = PatternFill(patternType='solid', fgColor='fecf8d', bgColor= 'fecf8d') # オレンジ
+                sheet.cell(row=i+2, column=j+3).fill = PatternFill(patternType='solid', fgColor='fecf8d', bgColor= 'fecf8d') # オレンジ
             elif shift_hope.iat[i,j] == "×":
                 continue
             else:
-                sheet.cell(row=i+2, column=j+2).fill = PatternFill(patternType='solid', fgColor='fffac2', bgColor= 'fffac2') # 黄色
+                sheet.cell(row=i+2, column=j+3).fill = PatternFill(patternType='solid', fgColor='fffac2', bgColor= 'fffac2') # 黄色
     
     # 変更したエクセルファイルを変更
     wb.save(excelFile)
@@ -345,7 +354,7 @@ def index():
     for i in range(1, days*2+4):
         sheet.cell(row=i, column=1).fill = PatternFill(patternType='solid', fgColor='eaf6fd', bgColor= 'eaf6fd') # 水色
 
-    for i in range(1, member+2):
+    for i in range(1, member+3):
         sheet.cell(row=1, column=i).fill = PatternFill(patternType='solid', fgColor='eaf6fd', bgColor= 'eaf6fd') # 水色
     
     # A列の幅を広くする
@@ -358,8 +367,8 @@ def index():
     sheet["A" + str(days*2+3)].value = "予想給料"
     
     for i in range(1,member+1):
-        countif_circle = "=COUNTIF(" + chr(i+65) + "2:" + chr(i+65) + str(days*2+1) + ',"○")*5000 &"円"'
-        sheet.cell(row=days*2+3, column=i+1).value = countif_circle
+        countif_circle = "=COUNTIF(" + chr(i+66) + "2:" + chr(i+66) + str(days*2+1) + ',"○")*5000 &"円"'
+        sheet.cell(row=days*2+3, column=i+2).value = countif_circle
 
     # ○,×,△のプルダウンを作成
     dv = DataValidation(type="list", formula1='"○,×,△"')
@@ -367,7 +376,7 @@ def index():
     # 適用するセルの指定
     for i in range(1, days*2+1):
         for j in range(1, member+1):
-            dv.add(sheet.cell(i+1, j+1))
+            dv.add(sheet.cell(i+1, j+2))
     
     # シートに入力規則を登録
     sheet.add_data_validation(dv)
@@ -379,12 +388,12 @@ def index():
     # セルに罫線を設定
     # 1行目の下側に中線
     for i in range(1, member+2):
-        sheet.cell(row=1, column=i).border = medium_bottom_border
+        sheet.cell(row=1, column=i+1).border = medium_bottom_border
     
     # 日程ごとに下側に細線
     for i in range(3, days*2+3, 2):
         for j in range(1, member+2):
-            sheet.cell(row=i, column=j).border = thin_bottom_border
+            sheet.cell(row=i, column=j+1).border = thin_bottom_border
     
     # 1行目を画面に固定
     sheet.freeze_panes = 'A2'
