@@ -15,6 +15,7 @@ import pulp
 from werkzeug.wrappers import response
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.styles.borders import Border, Side
+from openpyxl.styles import Alignment
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
@@ -282,6 +283,10 @@ def index():
     # B列に人数列を挿入する
     sheet.insert_cols(2)
     sheet["B1"].value = "人数"
+    sheet["B1"].alignment = Alignment( # 中央揃えに変更
+        horizontal='center',
+        vertical='center',
+    )
 
     # B列に=countif関数を挿入
     for i in range(2, days*2+2):
