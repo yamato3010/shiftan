@@ -90,6 +90,7 @@ def index():
     with open(f.filename) as file:
         title = file.readlines()[0]
         title = title.replace( '\n' , '' )
+        title = title.replace( ',' , '')
 
     # csvファイルの日程の列をリスト化
     day_of_week_list = chouseisan_csv['日程'].tolist()
@@ -325,7 +326,6 @@ def index():
     dxf=DifferentialStyle(fill=fill_red)
 
     for i in range(2, days * 2 + 2):
-        print(i)
         rule_Weekday = Rule(type='expression', formula=['B' + str(i) + '<2'], dxf=dxf)
         rule_Holiday = Rule(type='expression', formula=['B' + str(i) + '<4'], dxf=dxf)
         if chouseisan_csv.iloc[i-2,1] == weekday:
