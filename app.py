@@ -13,13 +13,13 @@ from flask import request, send_file
 from flask_httpauth import HTTPBasicAuth
 import pulp
 from werkzeug.wrappers import response
-import openpyxl as px
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.styles.borders import Border, Side
 from openpyxl.formatting.rule import Rule
-from openpyxl.styles import Color, PatternFill, Border, Font
+from openpyxl.styles import PatternFill, Border
 from openpyxl.styles.differential import DifferentialStyle
 from openpyxl.formatting.rule import ColorScaleRule, CellIsRule, FormulaRule
+from openpyxl.styles import Alignment
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
@@ -153,8 +153,8 @@ def index():
 
     print("○×を1,0に置き換えたもの(shift_converted): ",shift_converted) # ○×が1,0に書き換えられたシフト希望表の2次元配列を出力
 
-    needNumberWeekday = [2, 1] # [前半, 後半]
-    needNumberHoliday = [3, 3] # [前半, 後半]
+    needNumberWeekday = [3, 2] # [前半, 後半]
+    needNumberHoliday = [4, 4] # [前半, 後半]
 
     # ペナルティ定数の定義
     C_needNumber = 10
@@ -287,6 +287,10 @@ def index():
     # B列に人数列を挿入する
     sheet.insert_cols(2)
     sheet["B1"].value = "人数"
+    sheet["B1"].alignment = Alignment( # 中央揃えに変更
+        horizontal='center',
+        vertical='center',
+    )
 
     # B列に=countif関数を挿入
     for i in range(2, days*2+2):
