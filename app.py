@@ -259,10 +259,10 @@ def index():
 
                 new_chouseisan_csv.iat[i, j + 1] = "○"
             elif result[i, j] == 0: # もしシフトのあるマスが0ならそのマスに×を格納
-                new_chouseisan_csv.iat[i, j + 1] = "×"
+                new_chouseisan_csv.iat[i, j + 1] = ""
             else: # 0 or 1 以外がある場合,シフト希望を見て○×を選択
                 if shift_converted[i, j] == no_shift_hope:
-                    new_chouseisan_csv.iat[i, j + 1] = "×"
+                    new_chouseisan_csv.iat[i, j + 1] = ""
                 elif shift_converted[i, j] == yes_shift_hope:
                     new_chouseisan_csv.iat[i, j + 1] = "○"
                 else:
@@ -352,7 +352,7 @@ def index():
         sheet.cell(row=days*2+3, column=i+2).value = countif_circle
 
     # ○,×,△のプルダウンを作成
-    dv = DataValidation(type="list", formula1='"○,×,△"')
+    dv = DataValidation(type="list", formula1='" ,○,△"')
 
     # 適用するセルの指定
     for i in range(1, days*2+1):
