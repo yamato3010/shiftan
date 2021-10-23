@@ -15,6 +15,10 @@ import pulp
 from werkzeug.wrappers import response
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.styles.borders import Border, Side
+from openpyxl.formatting.rule import Rule
+from openpyxl.styles import PatternFill, Border
+from openpyxl.styles.differential import DifferentialStyle
+from openpyxl.formatting.rule import ColorScaleRule, CellIsRule, FormulaRule
 from openpyxl.styles import Alignment
 
 app = Flask(__name__)
@@ -303,12 +307,36 @@ def index():
             else:
                 sheet.cell(row=i+2, column=j+3).fill = PatternFill(patternType='solid', fgColor='fffac2', bgColor= 'fffac2') # 黄色
     
+    # 変更したエクセルファイルを変更
+    wb.save(excelFile)
+
+    #　希望しているところに色付けここまで
+    
     # 表のmemberと日程を見えやすいように色付け
     for i in range(1, days*2+4):
         sheet.cell(row=i, column=1).fill = PatternFill(patternType='solid', fgColor='eaf6fd', bgColor= 'eaf6fd') # 水色
 
     for i in range(1, member+3):
         sheet.cell(row=1, column=i).fill = PatternFill(patternType='solid', fgColor='eaf6fd', bgColor= 'eaf6fd') # 水色
+
+    # 人が不足している場合の色付け
+
+    fill_red = PatternFill(start_color='f69679', end_color='f69679', fill_type='solid')
+    dxf=DifferentialStyle(fill=fill_red)
+
+    for i in range(2, days * 2 + 2):
+        print(i)
+        rule_Weekday = Rule(type='expression', formula=['B' + str(i) + '<2'], dxf=dxf)
+        rule_Holiday = Rule(type='expression', formula=['B' + str(i) + '<4'], dxf=dxf)
+        if chouseisan_csv.iloc[i-2,1] == weekday:
+            sheet.conditional_formatting.add('B' + str(i), rule_Weekday)
+        elif chouseisan_csv.iloc[i-2,1] == holiday:
+            sheet.conditional_formatting.add('B' + str(i), rule_Holiday)
+    
+    # 人が不足している場合の色付けここまで
+
+    # 変更したエクセルファイルを変更
+    wb.save(excelFile)
     
     # A列の幅を広くする
     sheet.column_dimensions['A'].width = 23
