@@ -42,7 +42,7 @@ def get_pw(id):
     return None
 
 @app.route('/', methods=['POST', 'GET'])
-@auth.login_required # ここで認証が行われる
+# @auth.login_required # ここで認証が行われる
 def index():
 
     # ここから初期化処理 残ったxlsxファイルとcssファイルを消している
