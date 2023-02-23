@@ -76,7 +76,7 @@ def index():
         # csvファイルをデータフレームに
         chouseisan_csv = pd.read_csv(f.filename, encoding='cp932', header=1)
         chouseisan_csv['日程'].tolist()
-        chouseisan_csv = chouseisan_csv.iloc[: , :-1]
+        chouseisan_csv = chouseisan_csv.iloc[: , :]
         header = 1
         print("header1で読み込みます")
     except:
@@ -143,10 +143,11 @@ def index():
     shift_converted = np.ones((days * 2, member)) # シフトの0,1を格納する箱を作成、全て1が格納されている
     shift_hope = chouseisan_csv.iloc[0:days * 2, 2:] # 調整さんのデータフレームから○×だけを取得
     shift_hope.to_string(header=False, index=False) # ヘッダーとインデックスの削除、○×だけの状態に
-
+    print(shift_converted)
     for i in (range(days * 2)): # 日程の分ループさせる
         for j in (range(member)): # 従業員の分ループさせる
-            if shift_hope.iat[i, j] != "○": # もしシフト希望表のあるマスが×ならそのマスに0を格納
+            print(shift_hope.iat[i, j])
+            if shift_hope.iat[i, j] != "◯": # もしシフト希望表のあるマスが×ならそのマスに0を格納
                 shift_converted[i, j] = 0
     
 
@@ -243,7 +244,7 @@ def index():
     # もう一度csvを読み込んでその中の○×を書き換える
     if header == 1:
         new_chouseisan_csv = pd.read_csv(f.filename, encoding='cp932', header=1)
-        new_chouseisan_csv = new_chouseisan_csv.iloc[: , :-1]
+        new_chouseisan_csv = new_chouseisan_csv.iloc[: , :]
     else:
         new_chouseisan_csv = pd.read_csv(f.filename, encoding='cp932', header=2)
 
@@ -259,7 +260,7 @@ def index():
 
                 new_chouseisan_csv.iat[i, j + 1] = "○"
             elif result[i, j] == 0: # もしシフトのあるマスが0ならそのマスに×を格納
-                new_chouseisan_csv.iat[i, j + 1] = ""
+                new_chouseisan_csv.iat[i, j + 1 ] = ""
             else: # 0 or 1 以外がある場合,シフト希望を見て○×を選択
                 if shift_converted[i, j] == no_shift_hope:
                     new_chouseisan_csv.iat[i, j + 1] = ""
