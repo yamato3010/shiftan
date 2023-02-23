@@ -3,7 +3,8 @@
 ![image](https://user-images.githubusercontent.com/84577532/203667870-a1a2de6a-6f6d-4442-a574-b3dd3f3b303f.png)
 
 紹介動画（2021年10月時点）:https://youtu.be/EfO9MpHo35Q  
-アプリURL:https://shiftan.onrender.com
+アプリURL:https://shiftan.onrender.com  
+（動作確認のため、調整さんを使用して作成済みの[サンプルcsvファイル](https://drive.google.com/file/d/12_6FQxseXmUus_SJu3HnuNj_6cB4SF_k/view?usp=sharing)もご利用いただけます。）
 
 
 ## 概要
