@@ -3,7 +3,7 @@
 ![image](https://user-images.githubusercontent.com/84577532/203667870-a1a2de6a-6f6d-4442-a574-b3dd3f3b303f.png)
 
 紹介動画（2021年10月時点）:https://youtu.be/EfO9MpHo35Q  
-アプリURL:https://ninteen-shiftan.herokuapp.com/ 
+アプリURL:https://shiftan.onrender.com
 
 
 ## 概要
@@ -31,7 +31,7 @@
 #### Front : HTML/CSS, BootStarap 
 #### Back : Python(Flask), Numpy, Pandas  
 #### DB : MySQL  
-#### Infrastructure : Heroku
+#### Infrastructure : render
 #### Task Management : Trello
 
 ## どのように動くか
